@@ -873,7 +873,7 @@ WAZUH_RULES = dedent("""\
 
     <rule id="100110" level="12">
         <if_sid>61603</if_sid>
-        <field name="win.eventdata.commandLine" type="pcre2">(?i)(encodedcommand|frombase64string|-enc\s)</field>
+        <field name="win.eventdata.commandLine" type="pcre2">(?i)(encodedcommand|frombase64string|-enc\\s)</field>
         <description>SIEMForge: PowerShell executed with encoded command — possible obfuscation</description>
         <mitre>
             <id>T1059.001</id>
@@ -884,7 +884,7 @@ WAZUH_RULES = dedent("""\
 
     <rule id="100111" level="12">
         <if_sid>61603</if_sid>
-        <field name="win.eventdata.commandLine" type="pcre2">(?i)(downloadstring|downloadfile|invoke-webrequest|net\.webclient|start-bitstransfer)</field>
+        <field name="win.eventdata.commandLine" type="pcre2">(?i)(downloadstring|downloadfile|invoke-webrequest|net\\.webclient|start-bitstransfer)</field>
         <description>SIEMForge: PowerShell download cradle detected — possible payload staging</description>
         <mitre>
             <id>T1059.001</id>
@@ -895,7 +895,7 @@ WAZUH_RULES = dedent("""\
 
     <rule id="100112" level="10">
         <if_sid>61603</if_sid>
-        <field name="win.eventdata.commandLine" type="pcre2">(?i)(executionpolicy\s+bypass|set-executionpolicy\s+unrestricted)</field>
+        <field name="win.eventdata.commandLine" type="pcre2">(?i)(executionpolicy\\s+bypass|set-executionpolicy\\s+unrestricted)</field>
         <description>SIEMForge: PowerShell execution policy bypass detected</description>
         <mitre>
             <id>T1059.001</id>
@@ -946,7 +946,7 @@ WAZUH_RULES = dedent("""\
     <rule id="100130" level="14">
         <if_sid>61603</if_sid>
         <field name="win.system.eventID">10</field>
-        <field name="win.eventdata.targetImage" type="pcre2">(?i)lsass\.exe$</field>
+        <field name="win.eventdata.targetImage" type="pcre2">(?i)lsass\\.exe$</field>
         <description>SIEMForge: Process accessed LSASS memory — possible credential dumping by $(win.eventdata.sourceImage)</description>
         <mitre>
             <id>T1003.001</id>
@@ -960,7 +960,7 @@ WAZUH_RULES = dedent("""\
 
     <rule id="100140" level="14">
         <if_sid>61603</if_sid>
-        <field name="win.eventdata.commandLine" type="pcre2">(?i)(disablerealtimemonitoring|disablebehaviormonitoring|disableioavprotection|sc\s+stop\s+windefend|sc\s+delete\s+windefend)</field>
+        <field name="win.eventdata.commandLine" type="pcre2">(?i)(disablerealtimemonitoring|disablebehaviormonitoring|disableioavprotection|sc\\s+stop\\s+windefend|sc\\s+delete\\s+windefend)</field>
         <description>SIEMForge: Windows Defender tampering detected — AV defense evasion</description>
         <mitre>
             <id>T1562.001</id>
@@ -1548,7 +1548,7 @@ def show_stats():
         count = levels.get(lvl, 0)
         if count:
             lc = level_colors.get(lvl, C.WHITE)
-            bar = "█" * count
+            bar = ("█" if _UNICODE else "#") * count
             print(f"    {lc}{lvl:<16}{C.RESET} {bar} {count}")
 
 
