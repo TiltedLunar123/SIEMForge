@@ -1,0 +1,183 @@
+<!--
+    SIEMForge Wazuh Custom Detection Rules
+    Author: Jude Hilgendorf
+    GitHub: github.com/TiltedLunar123
+
+    Place in: /var/ossec/etc/rules/local_rules.xml
+    Then restart Wazuh: systemctl restart wazuh-manager
+
+    Rule ID Range: 100100 - 100199 (custom local range)
+-->
+
+<group name="siemforge,">
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SSH BRUTE FORCE BURST                       -->
+    <!-- ═══════════════════════════════════════════ -->
+
+    <rule id="100100" level="10" frequency="8" timeframe="60">
+        <if_matched_sid>5716</if_matched_sid>
+        <same_source_ip />
+        <description>SIEMForge: SSH brute-force burst detected — $(srcip) failed 8+ logins in 60 seconds</description>
+        <mitre>
+            <id>T1110.001</id>
+        </mitre>
+        <group>authentication_failures,brute_force,</group>
+    </rule>
+
+    <rule id="100101" level="12" frequency="20" timeframe="120">
+        <if_matched_sid>5716</if_matched_sid>
+        <same_source_ip />
+        <description>SIEMForge: Aggressive SSH brute-force — $(srcip) failed 20+ logins in 2 minutes</description>
+        <mitre>
+            <id>T1110.001</id>
+        </mitre>
+        <group>authentication_failures,brute_force,</group>
+    </rule>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SUSPICIOUS POWERSHELL EXECUTION             -->
+    <!-- ═══════════════════════════════════════════ -->
+
+    <rule id="100110" level="12">
+        <if_sid>61603</if_sid>
+        <field name="win.eventdata.commandLine" type="pcre2">(?i)(encodedcommand|frombase64string|-enc\s)</field>
+        <description>SIEMForge: PowerShell executed with encoded command — possible obfuscation</description>
+        <mitre>
+            <id>T1059.001</id>
+            <id>T1027.010</id>
+        </mitre>
+        <group>powershell,suspicious_execution,</group>
+    </rule>
+
+    <rule id="100111" level="12">
+        <if_sid>61603</if_sid>
+        <field name="win.eventdata.commandLine" type="pcre2">(?i)(downloadstring|downloadfile|invoke-webrequest|net\.webclient|start-bitstransfer)</field>
+        <description>SIEMForge: PowerShell download cradle detected — possible payload staging</description>
+        <mitre>
+            <id>T1059.001</id>
+            <id>T1105</id>
+        </mitre>
+        <group>powershell,download_cradle,</group>
+    </rule>
+
+    <rule id="100112" level="10">
+        <if_sid>61603</if_sid>
+        <field name="win.eventdata.commandLine" type="pcre2">(?i)(executionpolicy\s+bypass|set-executionpolicy\s+unrestricted)</field>
+        <description>SIEMForge: PowerShell execution policy bypass detected</description>
+        <mitre>
+            <id>T1059.001</id>
+        </mitre>
+        <group>powershell,policy_bypass,</group>
+    </rule>
+
+    <rule id="100113" level="14">
+        <if_sid>61603</if_sid>
+        <field name="win.eventdata.commandLine" type="pcre2">(?i)(amsiutils|amsiinitfailed|amsiScanbuffer|disable-amsi)</field>
+        <description>SIEMForge: AMSI bypass attempt detected in PowerShell</description>
+        <mitre>
+            <id>T1562.001</id>
+        </mitre>
+        <group>powershell,amsi_bypass,</group>
+    </rule>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- LOCAL ADMIN ACCOUNT CREATION                -->
+    <!-- ═══════════════════════════════════════════ -->
+
+    <rule id="100120" level="12">
+        <if_sid>60106</if_sid>
+        <field name="win.system.eventID">4720</field>
+        <description>SIEMForge: New local user account created — $(win.eventdata.targetUserName)</description>
+        <mitre>
+            <id>T1136.001</id>
+        </mitre>
+        <group>account_creation,persistence,</group>
+    </rule>
+
+    <rule id="100121" level="14">
+        <if_sid>60106</if_sid>
+        <field name="win.system.eventID">4732</field>
+        <field name="win.eventdata.targetGroupName" type="pcre2">(?i)admin</field>
+        <description>SIEMForge: User added to Administrators group — $(win.eventdata.targetUserName) → $(win.eventdata.targetGroupName)</description>
+        <mitre>
+            <id>T1098</id>
+            <id>T1136.001</id>
+        </mitre>
+        <group>privilege_escalation,admin_added,</group>
+    </rule>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- CREDENTIAL DUMPING (LSASS ACCESS)           -->
+    <!-- ═══════════════════════════════════════════ -->
+
+    <rule id="100130" level="14">
+        <if_sid>61603</if_sid>
+        <field name="win.system.eventID">10</field>
+        <field name="win.eventdata.targetImage" type="pcre2">(?i)lsass\.exe$</field>
+        <description>SIEMForge: Process accessed LSASS memory — possible credential dumping by $(win.eventdata.sourceImage)</description>
+        <mitre>
+            <id>T1003.001</id>
+        </mitre>
+        <group>credential_access,lsass_access,</group>
+    </rule>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- WINDOWS DEFENDER TAMPERING                  -->
+    <!-- ═══════════════════════════════════════════ -->
+
+    <rule id="100140" level="14">
+        <if_sid>61603</if_sid>
+        <field name="win.eventdata.commandLine" type="pcre2">(?i)(disablerealtimemonitoring|disablebehaviormonitoring|disableioavprotection|sc\s+stop\s+windefend|sc\s+delete\s+windefend)</field>
+        <description>SIEMForge: Windows Defender tampering detected — AV defense evasion</description>
+        <mitre>
+            <id>T1562.001</id>
+        </mitre>
+        <group>defense_evasion,av_tampering,</group>
+    </rule>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- LATERAL MOVEMENT (PSEXEC)                   -->
+    <!-- ═══════════════════════════════════════════ -->
+
+    <rule id="100150" level="12">
+        <if_sid>61603</if_sid>
+        <field name="win.eventdata.pipeName" type="pcre2">(?i)(psexesvc|psexec|paexec|csexec)</field>
+        <description>SIEMForge: PsExec named pipe detected — lateral movement indicator</description>
+        <mitre>
+            <id>T1021.002</id>
+            <id>T1570</id>
+        </mitre>
+        <group>lateral_movement,psexec,</group>
+    </rule>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- REGISTRY PERSISTENCE                        -->
+    <!-- ═══════════════════════════════════════════ -->
+
+    <rule id="100160" level="10">
+        <if_sid>61603</if_sid>
+        <field name="win.system.eventID">13</field>
+        <field name="win.eventdata.targetObject" type="pcre2">(?i)\CurrentVersion\(Run|RunOnce)\</field>
+        <description>SIEMForge: Registry Run key modified — possible persistence by $(win.eventdata.image)</description>
+        <mitre>
+            <id>T1547.001</id>
+        </mitre>
+        <group>persistence,registry_run_key,</group>
+    </rule>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- AUDIT LOG CLEARED                           -->
+    <!-- ═══════════════════════════════════════════ -->
+
+    <rule id="100170" level="14">
+        <if_sid>60106</if_sid>
+        <field name="win.system.eventID">1102</field>
+        <description>SIEMForge: Windows Security audit log was cleared — anti-forensics indicator</description>
+        <mitre>
+            <id>T1070.001</id>
+        </mitre>
+        <group>defense_evasion,log_cleared,</group>
+    </rule>
+
+</group>

@@ -1,0 +1,54 @@
+title: Windows Defender Disabled or Tampered
+id: f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809102
+status: experimental
+description: >
+    Detects attempts to disable Windows Defender real-time protection,
+    tamper protection, or core AV components via PowerShell, registry,
+    or service manipulation.
+references:
+    - https://attack.mitre.org/techniques/T1562/001/
+    - https://github.com/TiltedLunar123/SIEMForge
+author: Jude Hilgendorf
+date: 2025/06/15
+modified: 2025/06/15
+tags:
+    - attack.defense_evasion
+    - attack.t1562.001
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_powershell_disable:
+        CommandLine|contains:
+            - 'Set-MpPreference -DisableRealtimeMonitoring $true'
+            - 'Set-MpPreference -DisableBehaviorMonitoring $true'
+            - 'Set-MpPreference -DisableIOAVProtection $true'
+            - 'Set-MpPreference -DisableScriptScanning $true'
+            - 'Set-MpPreference -DisableBlockAtFirstSeen $true'
+    selection_registry:
+        CommandLine|contains:
+            - 'DisableAntiSpyware'
+            - 'DisableRealtimeMonitoring'
+            - 'DisableBehaviorMonitoring'
+    selection_service_stop:
+        CommandLine|contains:
+            - 'sc stop WinDefend'
+            - 'sc delete WinDefend'
+            - 'sc config WinDefend start= disabled'
+            - 'net stop WinDefend'
+    selection_tamper:
+        CommandLine|contains:
+            - 'TamperProtection'
+            - 'DisableAntiVirus'
+    condition: >
+        selection_powershell_disable or selection_registry or
+        selection_service_stop or selection_tamper
+fields:
+    - User
+    - CommandLine
+    - ParentImage
+    - ParentCommandLine
+falsepositives:
+    - Legitimate IT administration during troubleshooting
+    - GPO deployments switching to third-party AV
+level: critical

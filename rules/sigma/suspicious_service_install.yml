@@ -1,0 +1,50 @@
+title: Suspicious Windows Service Installation
+id: d0e1f2a3-b4c5-4d6e-7f80-910213243546
+status: experimental
+description: >
+    Detects installation of new Windows services via sc.exe or PowerShell,
+    which is a common technique for persistence and privilege escalation.
+    Filters out known legitimate service installers.
+references:
+    - https://attack.mitre.org/techniques/T1543/003/
+    - https://github.com/TiltedLunar123/SIEMForge
+author: Jude Hilgendorf
+date: 2025/06/15
+modified: 2025/06/15
+tags:
+    - attack.persistence
+    - attack.privilege_escalation
+    - attack.t1543.003
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_sc:
+        Image|endswith: '\\sc.exe'
+        CommandLine|contains:
+            - 'create'
+            - 'config'
+    selection_powershell:
+        CommandLine|contains:
+            - 'New-Service'
+            - 'Set-Service'
+    selection_event:
+        EventID: 7045
+    filter_legitimate:
+        ParentImage|endswith:
+            - '\\msiexec.exe'
+            - '\\setup.exe'
+            - '\\MsMpEng.exe'
+            - '\\TiWorker.exe'
+    condition: (selection_sc or selection_powershell or selection_event) and not filter_legitimate
+fields:
+    - User
+    - CommandLine
+    - ParentImage
+    - ServiceName
+    - ImagePath
+falsepositives:
+    - Legitimate software installation
+    - System administrators deploying services
+    - Windows updates and feature installations
+level: medium

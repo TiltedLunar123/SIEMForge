@@ -1,0 +1,49 @@
+title: Unauthorized Local Administrator Account Creation
+id: c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f
+status: experimental
+description: >
+    Detects creation of a new local user account followed by addition
+    to the local Administrators group. This is a common persistence
+    technique used by attackers after initial compromise.
+references:
+    - https://attack.mitre.org/techniques/T1136/001/
+    - https://attack.mitre.org/techniques/T1098/
+    - https://github.com/TiltedLunar123/SIEMForge
+author: Jude Hilgendorf
+date: 2025/06/15
+modified: 2025/06/15
+tags:
+    - attack.persistence
+    - attack.t1136.001
+    - attack.privilege_escalation
+    - attack.t1098
+logsource:
+    product: windows
+    service: security
+detection:
+    selection_user_created:
+        EventID: 4720
+    selection_admin_added:
+        EventID: 4732
+        TargetGroupName|contains:
+            - 'Administrators'
+            - 'Administradores'
+            - 'Administrateurs'
+    selection_net_commands:
+        EventID: 1
+        CommandLine|contains:
+            - 'net user /add'
+            - 'net localgroup administrators'
+            - 'New-LocalUser'
+            - 'Add-LocalGroupMember'
+    condition: selection_user_created or selection_admin_added or selection_net_commands
+fields:
+    - SubjectUserName
+    - TargetUserName
+    - TargetGroupName
+    - CommandLine
+falsepositives:
+    - Legitimate IT provisioning of new admin accounts
+    - Automated deployment scripts during initial setup
+    - Domain join operations
+level: critical

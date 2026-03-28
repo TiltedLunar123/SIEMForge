@@ -1,0 +1,46 @@
+title: Persistence via Registry Run Key Modification
+id: b8c9d0e1-f2a3-4b4c-5d6e-7f8091021324
+status: experimental
+description: >
+    Detects modification of Windows Registry Run and RunOnce keys
+    used to establish persistence. Monitors Sysmon Event ID 13
+    (RegistryEvent - Value Set) for writes to common autostart
+    registry locations.
+references:
+    - https://attack.mitre.org/techniques/T1547/001/
+    - https://github.com/TiltedLunar123/SIEMForge
+author: Jude Hilgendorf
+date: 2025/06/15
+modified: 2025/06/15
+tags:
+    - attack.persistence
+    - attack.t1547.001
+logsource:
+    product: windows
+    service: sysmon
+detection:
+    selection:
+        EventID: 13
+        TargetObject|contains:
+            - '\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\\'
+            - '\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RunOnce\\'
+            - '\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RunServices\\'
+            - '\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run\\'
+            - '\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run\\'
+    filter_legitimate:
+        Image|endswith:
+            - '\\msiexec.exe'
+            - '\\MpCmdRun.exe'
+            - '\\OneDriveSetup.exe'
+            - '\\Teams.exe'
+    condition: selection and not filter_legitimate
+fields:
+    - Image
+    - TargetObject
+    - Details
+    - User
+falsepositives:
+    - Software installations adding legitimate startup entries
+    - Windows feature updates
+    - User-installed applications
+level: medium

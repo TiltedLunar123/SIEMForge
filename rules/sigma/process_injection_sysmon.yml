@@ -1,0 +1,46 @@
+title: Process Injection via CreateRemoteThread (Sysmon)
+id: d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80
+status: experimental
+description: >
+    Detects potential process injection using CreateRemoteThread.
+    Sysmon Event ID 8 fires when a process creates a thread in
+    another process, a hallmark of injection techniques.
+references:
+    - https://attack.mitre.org/techniques/T1055/003/
+    - https://github.com/TiltedLunar123/SIEMForge
+author: Jude Hilgendorf
+date: 2025/06/15
+modified: 2025/06/15
+tags:
+    - attack.defense_evasion
+    - attack.privilege_escalation
+    - attack.t1055.003
+logsource:
+    product: windows
+    service: sysmon
+detection:
+    selection:
+        EventID: 8
+    filter_legitimate:
+        SourceImage|endswith:
+            - '\\csrss.exe'
+            - '\\lsass.exe'
+            - '\\services.exe'
+            - '\\svchost.exe'
+            - '\\wininit.exe'
+            - '\\MsMpEng.exe'
+            - '\\MpCmdRun.exe'
+    filter_same_process:
+        SourceImage: TargetImage
+    condition: selection and not filter_legitimate and not filter_same_process
+fields:
+    - SourceImage
+    - TargetImage
+    - SourceUser
+    - StartFunction
+    - StartModule
+falsepositives:
+    - Antivirus and EDR products
+    - Debugging tools (Visual Studio, WinDbg)
+    - Some legitimate software using thread injection for hooking
+level: high

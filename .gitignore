@@ -1,5 +1,8 @@
 # Export output
 siemforge_export/
+sigma_rules/
+sysmon/
+wazuh/
 
 # Python
 __pycache__/
@@ -7,11 +10,17 @@ __pycache__/
 *.pyo
 .venv/
 venv/
+*.egg-info/
 
 # Build artifacts
 *.zip
 *.tar.gz
 dist/
+
+# Test
+.pytest_cache/
+.coverage
+htmlcov/
 
 # OS files
 .DS_Store
