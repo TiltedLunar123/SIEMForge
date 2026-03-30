@@ -1,0 +1,45 @@
+title: SSH Brute-Force Burst Detection
+id: a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+status: experimental
+description: >
+    Detects rapid SSH authentication failures indicating a brute-force
+    attack. Triggers when multiple failed SSH login attempts occur from
+    the same source within a short time window.
+references:
+    - https://attack.mitre.org/techniques/T1110/001/
+    - https://github.com/TiltedLunar123/SIEMForge
+author: Jude Hilgendorf
+date: 2025/06/15
+modified: 2025/06/15
+tags:
+    - attack.credential_access
+    - attack.t1110.001
+    - attack.brute_force
+logsource:
+    category: authentication
+    product: linux
+    service: sshd
+detection:
+    selection_failed:
+        EventType: failure
+        ServiceName: sshd
+    selection_keywords:
+        - 'Failed password'
+        - 'authentication failure'
+        - 'Invalid user'
+    condition: selection_failed or selection_keywords
+fields:
+    - SourceIP
+    - TargetUserName
+    - EventType
+falsepositives:
+    - Misconfigured automated scripts with wrong credentials
+    - Users who forgot their password and retry rapidly
+    - Vulnerability scanners performing auth checks
+level: high
+custom:
+    threshold_count: 10
+    threshold_window: 60s
+    notes: >
+        Tune threshold based on environment. In a home lab, 5 failures
+        in 30 seconds is suspicious. Production may need higher thresholds.

@@ -1,0 +1,54 @@
+title: PsExec Lateral Movement Detection
+id: a7b8c9d0-e1f2-4a3b-4c5d-6e7f80910213
+status: experimental
+description: >
+    Detects execution of PsExec or PsExec-like tools used for
+    lateral movement. Monitors for the PsExec service installation,
+    named pipe creation, and characteristic process patterns.
+references:
+    - https://attack.mitre.org/techniques/T1021/002/
+    - https://attack.mitre.org/techniques/T1570/
+    - https://github.com/TiltedLunar123/SIEMForge
+author: Jude Hilgendorf
+date: 2025/06/15
+modified: 2025/06/15
+tags:
+    - attack.lateral_movement
+    - attack.t1021.002
+    - attack.execution
+    - attack.t1569.002
+logsource:
+    product: windows
+    service: sysmon
+detection:
+    selection_pipe:
+        EventID: 17
+        PipeName|contains:
+            - '\\PSEXESVC'
+            - '\\psexec'
+            - '\\csexec'
+            - '\\paexec'
+    selection_service:
+        EventID: 7045
+        ServiceName|contains:
+            - 'PSEXESVC'
+            - 'csexecsvc'
+            - 'paexec'
+    selection_process:
+        EventID: 1
+        Image|endswith:
+            - '\\PsExec.exe'
+            - '\\PsExec64.exe'
+            - '\\csexec.exe'
+            - '\\paexec.exe'
+    condition: selection_pipe or selection_service or selection_process
+fields:
+    - SourceImage
+    - User
+    - PipeName
+    - CommandLine
+    - TargetHostname
+falsepositives:
+    - Legitimate admin use of PsExec for remote management
+    - SCCM or similar tools using PsExec for deployment
+level: high

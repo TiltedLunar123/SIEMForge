@@ -1,0 +1,46 @@
+title: Persistence via Scheduled Task Creation
+id: c9d0e1f2-a3b4-4c5d-6e7f-809102132435
+status: experimental
+description: >
+    Detects creation of scheduled tasks via schtasks.exe or PowerShell,
+    commonly abused by attackers to establish persistence or execute
+    payloads at specific times or on user logon.
+references:
+    - https://attack.mitre.org/techniques/T1053/005/
+    - https://github.com/TiltedLunar123/SIEMForge
+author: Jude Hilgendorf
+date: 2025/06/15
+modified: 2025/06/15
+tags:
+    - attack.persistence
+    - attack.execution
+    - attack.t1053.005
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_schtasks:
+        Image|endswith: '\\schtasks.exe'
+        CommandLine|contains:
+            - '/create'
+            - '/Create'
+    selection_powershell:
+        CommandLine|contains:
+            - 'New-ScheduledTask'
+            - 'Register-ScheduledTask'
+            - 'ScheduledTasks'
+    filter_system:
+        User|contains:
+            - 'SYSTEM'
+            - 'LOCAL SERVICE'
+    condition: (selection_schtasks or selection_powershell) and not filter_system
+fields:
+    - User
+    - CommandLine
+    - ParentImage
+    - ParentCommandLine
+falsepositives:
+    - Legitimate software installation creating scheduled tasks
+    - IT automation and deployment tools
+    - Windows Update creating maintenance tasks
+level: medium

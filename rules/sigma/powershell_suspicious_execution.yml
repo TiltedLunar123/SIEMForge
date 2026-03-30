@@ -1,0 +1,77 @@
+title: Suspicious PowerShell Command Execution
+id: b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e
+status: experimental
+description: >
+    Detects PowerShell execution with suspicious parameters commonly
+    used by attackers — encoded commands, download cradles, execution
+    policy bypasses, and AMSI bypass attempts.
+references:
+    - https://attack.mitre.org/techniques/T1059/001/
+    - https://attack.mitre.org/techniques/T1027/010/
+    - https://github.com/TiltedLunar123/SIEMForge
+author: Jude Hilgendorf
+date: 2025/06/15
+modified: 2025/06/15
+tags:
+    - attack.execution
+    - attack.t1059.001
+    - attack.defense_evasion
+    - attack.t1027.010
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_process:
+        Image|endswith:
+            - '\\powershell.exe'
+            - '\\pwsh.exe'
+    selection_encoded:
+        CommandLine|contains:
+            - '-enc'
+            - '-EncodedCommand'
+            - '-e '
+            - 'FromBase64String'
+    selection_download:
+        CommandLine|contains:
+            - 'Net.WebClient'
+            - 'DownloadString'
+            - 'DownloadFile'
+            - 'Invoke-WebRequest'
+            - 'IWR '
+            - 'wget '
+            - 'curl '
+            - 'Start-BitsTransfer'
+            - 'Invoke-RestMethod'
+    selection_bypass:
+        CommandLine|contains:
+            - '-ExecutionPolicy Bypass'
+            - '-ep bypass'
+            - '-exec bypass'
+            - 'Set-ExecutionPolicy Unrestricted'
+    selection_amsi:
+        CommandLine|contains:
+            - 'AmsiUtils'
+            - 'amsiInitFailed'
+            - 'Disable-Amsi'
+            - 'AmsiScanBuffer'
+    selection_hidden:
+        CommandLine|contains:
+            - '-WindowStyle Hidden'
+            - '-w hidden'
+            - '-NoProfile'
+            - '-nop '
+            - '-sta '
+    condition: >
+        selection_process and
+        (selection_encoded or selection_download or
+         selection_bypass or selection_amsi or selection_hidden)
+fields:
+    - User
+    - CommandLine
+    - ParentImage
+    - ParentCommandLine
+falsepositives:
+    - Legitimate admin scripts using encoded commands
+    - Software deployment tools (SCCM, Intune)
+    - Chocolatey or winget package manager operations
+level: high
