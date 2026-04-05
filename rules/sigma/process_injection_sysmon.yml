@@ -1,5 +1,5 @@
 title: Process Injection via CreateRemoteThread (Sysmon)
-id: d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80
+id: 01ecbb7f-c57f-4bd3-86d9-9d1bf0c9c25a
 status: experimental
 description: >
     Detects potential process injection using CreateRemoteThread.
@@ -9,8 +9,8 @@ references:
     - https://attack.mitre.org/techniques/T1055/003/
     - https://github.com/TiltedLunar123/SIEMForge
 author: Jude Hilgendorf
-date: 2025/06/15
-modified: 2025/06/15
+date: 2025/04/03
+modified: 2025/05/18
 tags:
     - attack.defense_evasion
     - attack.privilege_escalation

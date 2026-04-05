@@ -1,5 +1,5 @@
 title: Suspicious PowerShell Command Execution
-id: b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e
+id: 0494607a-d2b2-44cd-b747-3958bc88c094
 status: experimental
 description: >
     Detects PowerShell execution with suspicious parameters commonly
@@ -10,8 +10,8 @@ references:
     - https://attack.mitre.org/techniques/T1027/010/
     - https://github.com/TiltedLunar123/SIEMForge
 author: Jude Hilgendorf
-date: 2025/06/15
-modified: 2025/06/15
+date: 2025/03/15
+modified: 2025/05/10
 tags:
     - attack.execution
     - attack.t1059.001

@@ -1,5 +1,5 @@
 title: Persistence via Scheduled Task Creation
-id: c9d0e1f2-a3b4-4c5d-6e7f-809102132435
+id: f8f2308a-b2b0-4d92-9177-3c133d4271c6
 status: experimental
 description: >
     Detects creation of scheduled tasks via schtasks.exe or PowerShell,
@@ -9,7 +9,7 @@ references:
     - https://attack.mitre.org/techniques/T1053/005/
     - https://github.com/TiltedLunar123/SIEMForge
 author: Jude Hilgendorf
-date: 2025/06/15
+date: 2025/05/25
 modified: 2025/06/15
 tags:
     - attack.persistence

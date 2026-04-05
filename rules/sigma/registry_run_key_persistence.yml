@@ -1,5 +1,5 @@
 title: Persistence via Registry Run Key Modification
-id: b8c9d0e1-f2a3-4b4c-5d6e-7f8091021324
+id: bba17dfa-55be-41e5-a678-e7551d040209
 status: experimental
 description: >
     Detects modification of Windows Registry Run and RunOnce keys
@@ -10,8 +10,8 @@ references:
     - https://attack.mitre.org/techniques/T1547/001/
     - https://github.com/TiltedLunar123/SIEMForge
 author: Jude Hilgendorf
-date: 2025/06/15
-modified: 2025/06/15
+date: 2025/05/14
+modified: 2025/06/12
 tags:
     - attack.persistence
     - attack.t1547.001

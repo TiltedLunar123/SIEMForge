@@ -1,5 +1,5 @@
 title: Suspicious Windows Service Installation
-id: d0e1f2a3-b4c5-4d6e-7f80-910213243546
+id: ad078195-0ef1-4c03-800b-e9ba4f4d6a15
 status: experimental
 description: >
     Detects installation of new Windows services via sc.exe or PowerShell,
@@ -9,7 +9,7 @@ references:
     - https://attack.mitre.org/techniques/T1543/003/
     - https://github.com/TiltedLunar123/SIEMForge
 author: Jude Hilgendorf
-date: 2025/06/15
+date: 2025/06/01
 modified: 2025/06/15
 tags:
     - attack.persistence

@@ -1,5 +1,5 @@
 title: Windows Defender Disabled or Tampered
-id: f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809102
+id: 49339117-e5e2-427d-9468-a68fa6ba6e57
 status: experimental
 description: >
     Detects attempts to disable Windows Defender real-time protection,
@@ -9,7 +9,7 @@ references:
     - https://attack.mitre.org/techniques/T1562/001/
     - https://github.com/TiltedLunar123/SIEMForge
 author: Jude Hilgendorf
-date: 2025/06/15
+date: 2025/04/20
 modified: 2025/06/15
 tags:
     - attack.defense_evasion

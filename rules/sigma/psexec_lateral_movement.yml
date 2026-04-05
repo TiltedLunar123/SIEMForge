@@ -1,5 +1,5 @@
 title: PsExec Lateral Movement Detection
-id: a7b8c9d0-e1f2-4a3b-4c5d-6e7f80910213
+id: e697ad93-435e-4bf1-9a08-03a641c67421
 status: experimental
 description: >
     Detects execution of PsExec or PsExec-like tools used for
@@ -10,8 +10,8 @@ references:
     - https://attack.mitre.org/techniques/T1570/
     - https://github.com/TiltedLunar123/SIEMForge
 author: Jude Hilgendorf
-date: 2025/06/15
-modified: 2025/06/15
+date: 2025/05/02
+modified: 2025/06/08
 tags:
     - attack.lateral_movement
     - attack.t1021.002

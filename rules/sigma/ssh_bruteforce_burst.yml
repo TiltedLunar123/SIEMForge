@@ -1,5 +1,5 @@
 title: SSH Brute-Force Burst Detection
-id: a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+id: 5dd84f67-07fd-4556-8115-7271ca619122
 status: experimental
 description: >
     Detects rapid SSH authentication failures indicating a brute-force
@@ -9,8 +9,8 @@ references:
     - https://attack.mitre.org/techniques/T1110/001/
     - https://github.com/TiltedLunar123/SIEMForge
 author: Jude Hilgendorf
-date: 2025/06/15
-modified: 2025/06/15
+date: 2025/03/08
+modified: 2025/04/22
 tags:
     - attack.credential_access
     - attack.t1110.001
