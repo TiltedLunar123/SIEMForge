@@ -1,0 +1,7 @@
+[
+  {"EventID": 13, "Image": "C:\\Users\\attacker\\malware.exe", "TargetObject": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\\Updater", "Details": "C:\\Users\\attacker\\backdoor.exe", "User": "CORP\\attacker"},
+  {"EventID": 13, "Image": "C:\\Windows\\System32\\msiexec.exe", "TargetObject": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\\Teams", "Details": "C:\\Program Files\\Teams\\teams.exe", "User": "NT AUTHORITY\\SYSTEM"},
+  {"EventID": 1, "Image": "C:\\Windows\\System32\\schtasks.exe", "CommandLine": "schtasks.exe /create /tn \"SystemUpdate\" /tr \"C:\\Users\\attacker\\payload.exe\" /sc onlogon", "User": "CORP\\attacker", "ParentImage": "C:\\Windows\\System32\\cmd.exe"},
+  {"EventID": 1, "Image": "C:\\Windows\\System32\\sc.exe", "CommandLine": "sc create EvilSvc binPath= \"C:\\Users\\attacker\\svc.exe\" start= auto", "User": "CORP\\attacker", "ParentImage": "C:\\Windows\\System32\\cmd.exe"},
+  {"EventID": 1, "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "CommandLine": "powershell.exe Set-MpPreference -DisableRealtimeMonitoring $true", "User": "CORP\\attacker", "ParentImage": "C:\\Windows\\System32\\cmd.exe"}
+]
