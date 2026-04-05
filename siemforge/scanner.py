@@ -244,18 +244,20 @@ def match_rule(event: dict, rule: dict) -> bool:
 
 def scan_logs(log_path: str, rules: dict[str, dict],
               fmt: str | None = None, output_json: bool = False):
-    header(f"SCANNING: {log_path}")
     path = Path(log_path)
+    if not output_json:
+        header(f"SCANNING: {log_path}")
     if not path.is_file():
         err(f"Log file not found: {log_path}")
-        return
+        return 0
     try:
         events = parse_log_file(path, fmt)
     except Exception as exc:
         err(f"Failed to parse {log_path}: {exc}")
-        return
-    info(f"Parsed {len(events)} events from {path.name}")
-    print()
+        return 0
+    if not output_json:
+        info(f"Parsed {len(events)} events from {path.name}")
+        print()
 
     alerts: list[dict] = []
     level_colors = {
@@ -308,6 +310,8 @@ def scan_logs(log_path: str, rules: dict[str, dict],
                   f"across {len(events)} events")
         else:
             ok("No alerts -- all events are clean.")
+
+    return len(alerts)
 
 
 def _summarise_event(event: dict) -> str:
