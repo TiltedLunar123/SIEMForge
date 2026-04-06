@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 
 from siemforge._version import VERSION
-from siemforge.display import C, _UNICODE, header
+from siemforge.display import _UNICODE, C, header
 from siemforge.loader import load_config_file
 from siemforge.mitre import collect_techniques
 

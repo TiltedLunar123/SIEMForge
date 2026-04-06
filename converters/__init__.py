@@ -1,7 +1,9 @@
 """SIEMForge Sigma-to-SIEM query converters."""
-from converters.splunk import SplunkConverter
-from converters.elastic import ElasticConverter
-from converters.kibana import KibanaConverter
+from .elastic import ElasticConverter
+from .kibana import KibanaConverter
+from .splunk import SplunkConverter
+
+__all__ = ["SplunkConverter", "ElasticConverter", "KibanaConverter", "BACKENDS"]
 
 BACKENDS: dict = {
     "splunk": SplunkConverter,

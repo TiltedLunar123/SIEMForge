@@ -8,9 +8,11 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
@@ -28,12 +30,25 @@ jobs:
 
       - name: Run tests with coverage
         run: pytest tests/ -v --cov=siemforge --cov=converters --cov-report=term-missing
+        env:
+          PYTHONUTF8: "1"
 
       - name: Validate Sigma rules
         run: python -m siemforge --validate
 
-      - name: Smoke test converter
-        run: python -m siemforge --convert splunk > /dev/null
+      - name: Smoke test converters
+        run: |
+          python -m siemforge --convert splunk > /dev/null
+          python -m siemforge --convert elastic > /dev/null
+          python -m siemforge --convert kibana > /dev/null
+        shell: bash
 
       - name: Smoke test scanner
-        run: python -m siemforge --scan samples/powershell_attack.json
+        run: |
+          python -m siemforge --scan samples/powershell_attack.json
+          python -m siemforge --scan samples/ssh_bruteforce.log
+
+      - name: Smoke test MITRE and export
+        run: |
+          python -m siemforge --mitre
+          python -m siemforge --export-all --dry-run

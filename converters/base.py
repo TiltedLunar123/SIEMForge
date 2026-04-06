@@ -4,6 +4,14 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+__all__ = [
+    "BaseConverter",
+    "parse_condition",
+    "ConditionAnd",
+    "ConditionOr",
+    "ConditionNot",
+    "ConditionRef",
+]
 
 # ── AST Nodes ──────────────────────────────────
 
@@ -120,7 +128,10 @@ def parse_condition(condition: str) -> object:
     result = _parse_expression()
 
     if pos[0] != len(tokens):
-        raise ValueError(f"Unexpected token: {tokens[pos[0]]}")
+        remaining = " ".join(tokens[pos[0]:])
+        raise ValueError(
+            f"Unexpected token '{tokens[pos[0]]}' at position {pos[0]}: {remaining}"
+        )
 
     return result
 

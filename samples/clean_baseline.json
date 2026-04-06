@@ -1,0 +1,20 @@
+[
+  {
+    "EventID": 1,
+    "Image": "C:\\Windows\\System32\\notepad.exe",
+    "CommandLine": "notepad.exe C:\\Users\\user\\notes.txt",
+    "User": "CORP\\user"
+  },
+  {
+    "EventID": 1,
+    "Image": "C:\\Program Files\\Mozilla Firefox\\firefox.exe",
+    "CommandLine": "firefox.exe https://example.com",
+    "User": "CORP\\user"
+  },
+  {
+    "EventID": 13,
+    "Image": "C:\\Windows\\System32\\msiexec.exe",
+    "TargetObject": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\App",
+    "Details": "C:\\Program Files\\App\\app.exe"
+  }
+]

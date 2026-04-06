@@ -1,8 +1,7 @@
 """Tests for Sigma rule validation using proper YAML parsing."""
 
-import pytest
 
-from siemforge import validate_sigma_rule, load_sigma_rules, VALID_LEVELS
+from siemforge import VALID_LEVELS, load_sigma_rules, validate_sigma_rule
 
 
 class TestValidateSigmaRule:

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 
-from siemforge.display import C, ok, err, bullet, header
+from siemforge.display import C, bullet, err, header, ok
 
 REQUIRED_SIGMA_FIELDS = [
     "title", "id", "status", "description", "author",

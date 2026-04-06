@@ -4,21 +4,36 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "siemforge"
-version = "3.0.0"
+version = "3.1.0"
 description = "Portable SIEM detection toolkit with Sigma rules, Sysmon config, and Wazuh custom rules mapped to MITRE ATT&CK."
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
-authors = [{name = "Jude Hilgendorf"}]
-dependencies = ["pyyaml>=6.0"]
+authors = [{name = "Jude Hilgendorf", email = "hilgendorfjude@gmail.com"}]
+keywords = ["siem", "sigma", "detection", "sysmon", "wazuh", "mitre-attack", "security", "threat-detection"]
+dependencies = ["pyyaml>=6.0,<7.0"]
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
     "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Security",
 ]
 
+[project.urls]
+Homepage = "https://github.com/TiltedLunar123/SIEMForge"
+Repository = "https://github.com/TiltedLunar123/SIEMForge"
+Issues = "https://github.com/TiltedLunar123/SIEMForge/issues"
+Changelog = "https://github.com/TiltedLunar123/SIEMForge/blob/master/CHANGELOG.md"
+
 [project.optional-dependencies]
-dev = ["pytest", "pytest-cov", "ruff"]
+test = ["pytest>=7.0,<9.0", "pytest-cov>=4.0,<6.0"]
+lint = ["ruff>=0.4,<1.0"]
+dev = ["pytest>=7.0,<9.0", "pytest-cov>=4.0,<6.0", "ruff>=0.4,<1.0"]
 
 [project.scripts]
 siemforge = "siemforge.cli:main"
@@ -31,7 +46,7 @@ line-length = 100
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I"]
+select = ["E", "F", "W", "I", "UP", "C4"]
 
 [tool.coverage.run]
 source = ["siemforge", "converters"]
@@ -39,3 +54,4 @@ source = ["siemforge", "converters"]
 [tool.coverage.report]
 show_missing = true
 skip_empty = true
+fail_under = 60

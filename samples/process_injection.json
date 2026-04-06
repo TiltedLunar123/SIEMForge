@@ -1,0 +1,18 @@
+[
+  {
+    "EventID": 8,
+    "SourceImage": "C:\\Tools\\injector.exe",
+    "TargetImage": "C:\\Windows\\System32\\svchost.exe",
+    "NewThreadId": 4820,
+    "StartAddress": "0x7FFE12340000",
+    "SourceUser": "CORP\\attacker"
+  },
+  {
+    "EventID": 8,
+    "SourceImage": "C:\\Users\\Public\\beacon.exe",
+    "TargetImage": "C:\\Windows\\explorer.exe",
+    "NewThreadId": 6100,
+    "StartAddress": "0x0000020B40000000",
+    "SourceUser": "CORP\\user"
+  }
+]

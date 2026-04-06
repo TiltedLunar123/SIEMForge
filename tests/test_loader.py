@@ -1,9 +1,9 @@
 """Tests for rule loading functionality."""
 
-import pytest
-from pathlib import Path
 
-from siemforge import load_sigma_rules, load_config_file, SIGMA_RULES_DIR, CONFIGS_DIR
+import pytest
+
+from siemforge import SIGMA_RULES_DIR, load_config_file, load_sigma_rules
 
 
 class TestLoadSigmaRules:
@@ -11,7 +11,10 @@ class TestLoadSigmaRules:
 
     def test_loads_all_rules_from_default_dir(self):
         rules = load_sigma_rules()
-        assert len(rules) == 10, f"Expected 10 Sigma rules, got {len(rules)}"
+        rule_files = list(SIGMA_RULES_DIR.glob("*.yml"))
+        assert len(rules) == len(rule_files), (
+            f"Expected {len(rule_files)} Sigma rules, got {len(rules)}"
+        )
 
     def test_all_rules_are_dicts(self):
         rules = load_sigma_rules()

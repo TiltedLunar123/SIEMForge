@@ -1,0 +1,16 @@
+[
+  {
+    "EventID": 7045,
+    "ServiceName": "evilsvc",
+    "ImagePath": "cmd.exe /c C:\\Windows\\Temp\\payload.exe",
+    "ServiceType": "user mode service",
+    "AccountName": "LocalSystem"
+  },
+  {
+    "EventID": 7045,
+    "ServiceName": "SysUpdate",
+    "ImagePath": "powershell.exe -enc ZQBjAGgAbwA=",
+    "ServiceType": "user mode service",
+    "AccountName": "LocalSystem"
+  }
+]

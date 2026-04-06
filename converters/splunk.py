@@ -1,7 +1,9 @@
 """Splunk SPL converter for Sigma rules."""
 from __future__ import annotations
 
-from converters.base import BaseConverter
+from .base import BaseConverter
+
+__all__ = ["SplunkConverter"]
 
 
 class SplunkConverter(BaseConverter):

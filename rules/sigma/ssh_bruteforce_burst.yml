@@ -24,9 +24,10 @@ detection:
         EventType: failure
         ServiceName: sshd
     selection_keywords:
-        - 'Failed password'
-        - 'authentication failure'
-        - 'Invalid user'
+        message|contains:
+            - 'Failed password'
+            - 'authentication failure'
+            - 'Invalid user'
     condition: selection_failed or selection_keywords
 fields:
     - SourceIP

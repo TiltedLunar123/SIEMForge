@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from siemforge.display import C, _LINE_CHAR, header, ok, info, warn, err, bullet
+from siemforge.display import C, bullet, err, header, info, ok
 from siemforge.mitre import MITRE_MAP
 
 

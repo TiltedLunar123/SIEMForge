@@ -17,9 +17,9 @@ from converters.base import (
     ConditionRef,
     parse_condition,
 )
-from converters.splunk import SplunkConverter
 from converters.elastic import ElasticConverter
 from converters.kibana import KibanaConverter
+from converters.splunk import SplunkConverter
 
 RULES_DIR = Path(__file__).resolve().parent.parent / "rules" / "sigma"
 
@@ -334,4 +334,5 @@ class TestCLIConvert:
         )
         assert result.returncode == 0
         spl_files = list(tmp_path.glob("*.spl"))
-        assert len(spl_files) == 10
+        expected = len(list(RULES_DIR.glob("*.yml")))
+        assert len(spl_files) == expected

@@ -1,7 +1,7 @@
 """MITRE ATT&CK mapping and coverage display."""
 from __future__ import annotations
 
-from siemforge.display import C, _LINE_CHAR, header
+from siemforge.display import _LINE_CHAR, C, header
 
 MITRE_MAP: dict[str, dict[str, str]] = {
     "T1110.001": {"name": "Brute Force: Password Guessing", "tactic": "Credential Access"},

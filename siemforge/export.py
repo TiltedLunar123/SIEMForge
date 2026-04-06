@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 from siemforge._version import VERSION
-from siemforge.display import C, ok, err, info, header
+from siemforge.display import C, err, header, info, ok
 from siemforge.loader import load_config_file
 from siemforge.mitre import collect_techniques
 
@@ -203,12 +203,12 @@ def export_all(rules: dict[str, dict], output_dir: str = "siemforge_export",
 
     print(f"\n  {C.DIM}Directory structure:{C.RESET}")
     print(f"  {base}/")
-    print(f"  \u251c\u2500\u2500 manifest.json")
-    print(f"  \u251c\u2500\u2500 sigma_rules/")
+    print("  \u251c\u2500\u2500 manifest.json")
+    print("  \u251c\u2500\u2500 sigma_rules/")
     for f in sorted(rules.keys()):
         print(f"  \u2502   \u251c\u2500\u2500 {f}")
-    print(f"  \u251c\u2500\u2500 sysmon/")
-    print(f"  \u2502   \u2514\u2500\u2500 sysmon_config.xml")
-    print(f"  \u2514\u2500\u2500 wazuh/")
-    print(f"      \u251c\u2500\u2500 local_rules.xml")
-    print(f"      \u2514\u2500\u2500 agent_ossec_snippet.xml")
+    print("  \u251c\u2500\u2500 sysmon/")
+    print("  \u2502   \u2514\u2500\u2500 sysmon_config.xml")
+    print("  \u2514\u2500\u2500 wazuh/")
+    print("      \u251c\u2500\u2500 local_rules.xml")
+    print("      \u2514\u2500\u2500 agent_ossec_snippet.xml")

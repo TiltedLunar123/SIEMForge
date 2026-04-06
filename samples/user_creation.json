@@ -1,0 +1,16 @@
+[
+  {
+    "EventID": 4720,
+    "TargetUserName": "backdoor_admin",
+    "SubjectUserName": "admin",
+    "SubjectDomainName": "CORP",
+    "TargetDomainName": "CORP"
+  },
+  {
+    "EventID": 4732,
+    "MemberName": "CN=backdoor_admin,CN=Users,DC=corp,DC=local",
+    "TargetUserName": "Administrators",
+    "SubjectUserName": "admin",
+    "SubjectDomainName": "CORP"
+  }
+]

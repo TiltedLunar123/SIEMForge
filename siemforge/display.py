@@ -6,7 +6,6 @@ import sys
 
 from siemforge._version import VERSION
 
-
 # ──────────────────────────────────────────────
 # ANSI COLORS (respects NO_COLOR convention)
 # ──────────────────────────────────────────────

@@ -6,29 +6,42 @@ import sys
 from pathlib import Path
 
 from siemforge._version import VERSION
-from siemforge.display import C, DIV, BANNER, header, info
-from siemforge.loader import load_sigma_rules
-from siemforge.validator import validate_rules
-from siemforge.mitre import show_mitre_coverage
+from siemforge.display import BANNER, DIV, C, header, info
 from siemforge.export import (
-    export_sigma_rules, export_sysmon_config, export_wazuh_rules, export_all,
+    export_all,
+    export_sigma_rules,
+    export_sysmon_config,
+    export_wazuh_rules,
 )
-from siemforge.stats import show_stats, show_stats_json, show_rule_summary
-from siemforge.test_commands import generate_test_commands
+from siemforge.loader import load_sigma_rules
+from siemforge.mitre import show_mitre_coverage
 from siemforge.scanner import scan_logs
-
+from siemforge.stats import show_rule_summary, show_stats, show_stats_json
+from siemforge.test_commands import generate_test_commands
+from siemforge.validator import validate_rules
 
 CONVERT_EXTENSIONS = {"splunk": ".spl", "elastic": ".lucene", "kibana": ".kql"}
 
 
-def convert_rules(rules, backend_name, output_dir=None, single_rule=None, dry_run=False):
-    """Convert Sigma rules to SIEM queries using the specified backend."""
+def convert_rules(
+    rules: dict[str, dict],
+    backend_name: str,
+    output_dir: str | None = None,
+    single_rule: str | None = None,
+    dry_run: bool = False,
+) -> int:
+    """Convert Sigma rules to SIEM queries using the specified backend.
+
+    Returns the number of conversion errors (0 on full success).
+    """
     from converters import BACKENDS
-    from siemforge.display import _LINE_CHAR, ok, err as _err
+    from siemforge.display import _LINE_CHAR, ok
+    from siemforge.display import err as _err
 
     backend_cls = BACKENDS[backend_name]
     converter = backend_cls()
     ext = CONVERT_EXTENSIONS[backend_name]
+    errors = 0
 
     if single_rule:
         if single_rule not in rules:
@@ -55,13 +68,19 @@ def convert_rules(rules, backend_name, output_dir=None, single_rule=None, dry_ru
 
         for filename, rule in rules.items():
             stem = filename.rsplit(".", 1)[0]
-            query = converter.convert_rule(rule)
+            try:
+                query = converter.convert_rule(rule)
+            except (ValueError, KeyError) as exc:
+                _err(f"Failed to convert {filename}: {exc}")
+                errors += 1
+                continue
             filepath = out_path / (stem + ext)
             try:
                 filepath.write_text(query + "\n", encoding="utf-8")
                 ok(f"Wrote {filepath}")
             except OSError as e:
                 _err(f"Failed to write {filepath}: {e}")
+                errors += 1
 
         info(f"Exported {len(rules)} queries to ./{out_path}/")
     else:
@@ -84,14 +103,20 @@ def convert_rules(rules, backend_name, output_dir=None, single_rule=None, dry_ru
             print(f"  {C.BLUE}{_LINE_CHAR * 50}{C.RESET}")
 
             if dry_run:
-                info("(dry run \u2014 query not generated)")
+                info("(dry run -- query not generated)")
             else:
-                query = converter.convert_rule(rule)
+                try:
+                    query = converter.convert_rule(rule)
+                except (ValueError, KeyError) as exc:
+                    _err(f"Failed to convert {filename}: {exc}")
+                    errors += 1
+                    continue
                 for line in query.split("\n"):
                     print(f"    {C.GREEN}{line}{C.RESET}")
 
     print(f"\n  {C.BOLD}Backend:{C.RESET} {backend_name}")
     print(f"  {C.BOLD}Rules converted:{C.RESET} {len(rules)}")
+    return errors
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -155,7 +180,8 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main():
+def main() -> int:
+    """Run the SIEMForge CLI. Returns 0 on success, 1 on error."""
     # Enable ANSI on Windows
     if sys.platform == "win32":
         try:
@@ -175,6 +201,7 @@ def main():
     rules = load_sigma_rules()
 
     ran_something = False
+    errors = 0
     dry_run = args.dry_run
 
     if args.export_all:
@@ -217,7 +244,7 @@ def main():
         ran_something = True
 
     if args.convert:
-        convert_rules(
+        errors += convert_rules(
             rules,
             backend_name=args.convert,
             output_dir=args.convert_output,
@@ -227,19 +254,27 @@ def main():
         ran_something = True
 
     if args.scan:
-        scan_logs(args.scan, rules, fmt=args.scan_format,
-                  output_json=args.json)
+        try:
+            scan_logs(args.scan, rules, fmt=args.scan_format,
+                      output_json=args.json)
+        except (ValueError, OSError) as exc:
+            from siemforge.display import err
+            err(str(exc))
+            errors += 1
         ran_something = True
 
     if not ran_something:
         show_stats(rules)
         show_rule_summary(rules)
-        print(f"\n  {C.DIM}Run with --help for all options or --export-all to export everything.{C.RESET}")
+        hint = "Run with --help for all options or --export-all to export everything."
+        print(f"\n  {C.DIM}{hint}{C.RESET}")
 
     print(f"\n{DIV}")
-    print(f"  {C.CYAN}SIEMForge \u2014 Detection engineering made portable.{C.RESET}")
+    print(f"  {C.CYAN}SIEMForge -- Detection engineering made portable.{C.RESET}")
     print(f"{DIV}\n")
+
+    return 1 if errors else 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

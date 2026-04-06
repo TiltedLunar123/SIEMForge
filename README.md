@@ -14,10 +14,13 @@
 
 ---
 
-## What's New in v3.0
+## What's New in v3.1
 
-- **Log Scanner** -- Scan JSON, JSONL, syslog, and CSV log files against your Sigma rule set directly from the CLI. No SIEM required.
-- **Package Refactor** -- The project has been restructured into the `siemforge/` Python package for cleaner imports, easier testing, and pip-friendly installation.
+- **Expanded test suite** -- 138 tests covering CLI, scanner edge cases, stats output, and new sample data.
+- **Better error handling** -- converter and scanner errors are caught and reported gracefully with proper exit codes.
+- **More sample data** -- process injection, service installation, user creation, CSV, and a clean baseline for false positive validation.
+- **CI improvements** -- Windows matrix testing, all three converter backends smoke-tested, MITRE and export smoke tests.
+- **Sigma spec fix** -- `ssh_bruteforce_burst.yml` now uses proper field-condition mapping.
 
 ---
 
@@ -307,17 +310,20 @@ The following diagram illustrates a typical home lab deployment using SIEMForge 
 
 ## Development
 
-Contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
-
-- Adding new Sigma rules
-- Writing converter backends
-- Extending the log scanner
-- Running the test suite
-
-Run the test suite:
+Contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on adding rules, writing converter backends, extending the scanner, and running the test suite.
 
 ```bash
-python -m pytest tests/ -v
+# Install dev dependencies
+pip install -r requirements-dev.txt
+
+# Run all tests
+pytest tests/ -v
+
+# Run tests with coverage
+pytest tests/ -v --cov=siemforge --cov=converters --cov-report=term-missing
+
+# Lint
+ruff check .
 ```
 
 ---

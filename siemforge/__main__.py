@@ -1,6 +1,8 @@
 """Allow running as `python -m siemforge`."""
 
+import sys
+
 from siemforge.cli import main
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

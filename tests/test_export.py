@@ -1,13 +1,16 @@
 """Tests for export and stats functionality."""
 
 import json
-import pytest
-from pathlib import Path
 
 from siemforge import (
-    load_sigma_rules, export_sigma_rules, export_all,
-    _collect_techniques, _count_levels, MITRE_MAP,
+    MITRE_MAP,
+    _collect_techniques,
+    _count_levels,
+    export_all,
+    export_sigma_rules,
+    load_sigma_rules,
 )
+from siemforge.stats import count_levels, show_rule_summary, show_stats, show_stats_json
 
 
 class TestCollectTechniques:
@@ -108,3 +111,44 @@ class TestExportAll:
         assert manifest["tool"] == "SIEMForge"
         assert manifest["sigma_count"] == len(rules)
         assert len(manifest["mitre_techniques"]) > 0
+
+
+class TestStatsOutput:
+    """Tests for stats display functions."""
+
+    def test_show_stats_runs(self, capsys):
+        rules = load_sigma_rules()
+        show_stats(rules)
+        output = capsys.readouterr().out
+        assert "Sigma Detection Rules" in output
+
+    def test_show_stats_json_valid(self, capsys):
+        rules = load_sigma_rules()
+        show_stats_json(rules)
+        output = capsys.readouterr().out
+        data = json.loads(output)
+        assert "version" in data
+        assert "sigma_rules" in data
+        assert "severity_breakdown" in data
+        assert data["sigma_rules"] == len(rules)
+
+    def test_show_rule_summary_runs(self, capsys):
+        rules = load_sigma_rules()
+        show_rule_summary(rules)
+        output = capsys.readouterr().out
+        assert "Total Rules" in output
+
+    def test_count_levels_mixed(self):
+        rules = {
+            "a.yml": {"level": "high"},
+            "b.yml": {"level": "high"},
+            "c.yml": {"level": "low"},
+        }
+        levels = count_levels(rules)
+        assert levels["high"] == 2
+        assert levels["low"] == 1
+
+    def test_count_levels_missing_level(self):
+        rules = {"a.yml": {"title": "no level field"}}
+        levels = count_levels(rules)
+        assert levels.get("unknown") == 1

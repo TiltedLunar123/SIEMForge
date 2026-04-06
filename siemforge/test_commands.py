@@ -1,7 +1,7 @@
 """Safe test commands to trigger detection rules."""
 from __future__ import annotations
 
-from siemforge.display import C, _LINE_CHAR, header, warn
+from siemforge.display import _LINE_CHAR, C, header, warn
 
 
 def generate_test_commands() -> None:
