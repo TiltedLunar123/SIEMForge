@@ -10,6 +10,8 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
+    env:
+      PYTHONUTF8: "1"
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -30,8 +32,6 @@ jobs:
 
       - name: Run tests with coverage
         run: pytest tests/ -v --cov=siemforge --cov=converters --cov-report=term-missing
-        env:
-          PYTHONUTF8: "1"
 
       - name: Validate Sigma rules
         run: python -m siemforge --validate
