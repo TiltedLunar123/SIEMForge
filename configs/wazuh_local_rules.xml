@@ -158,7 +158,7 @@
     <rule id="100160" level="10">
         <if_sid>61603</if_sid>
         <field name="win.system.eventID">13</field>
-        <field name="win.eventdata.targetObject" type="pcre2">(?i)\CurrentVersion\(Run|RunOnce)\</field>
+        <field name="win.eventdata.targetObject" type="pcre2">(?i)\\CurrentVersion\\(Run|RunOnce)\\</field>
         <description>SIEMForge: Registry Run key modified — possible persistence by $(win.eventdata.image)</description>
         <mitre>
             <id>T1547.001</id>
