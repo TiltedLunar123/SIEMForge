@@ -103,7 +103,7 @@ class TestCLIScan:
 
     def test_scan_missing_file(self):
         result = _run("--scan", "nonexistent_file.json")
-        assert result.returncode == 0  # prints error but does not crash
+        assert result.returncode == 1  # error return for missing file
 
     def test_scan_json_output(self):
         path = os.path.join(SAMPLES_DIR, "powershell_attack.json")

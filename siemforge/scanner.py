@@ -249,12 +249,12 @@ def scan_logs(log_path: str, rules: dict[str, dict],
         header(f"SCANNING: {log_path}")
     if not path.is_file():
         err(f"Log file not found: {log_path}")
-        return 0
+        return -1
     try:
         events = parse_log_file(path, fmt)
     except Exception as exc:
         err(f"Failed to parse {log_path}: {exc}")
-        return 0
+        return -1
     if not output_json:
         info(f"Parsed {len(events)} events from {path.name}")
         print()

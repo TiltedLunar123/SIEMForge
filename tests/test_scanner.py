@@ -149,7 +149,7 @@ class TestScanLogs:
     def test_scan_nonexistent_file(self, capsys):
         rules = load_sigma_rules()
         count = scan_logs("/tmp/nonexistent_file_12345.json", rules)
-        assert count == 0
+        assert count == -1
 
     def test_scan_json_output(self, capsys):
         rules = load_sigma_rules()

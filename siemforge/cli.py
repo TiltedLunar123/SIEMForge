@@ -192,10 +192,11 @@ def main() -> int:
         except Exception:
             pass
 
-    print(BANNER)
-
     parser = build_parser()
     args = parser.parse_args()
+
+    if not args.json:
+        print(BANNER)
 
     # Load rules once
     rules = load_sigma_rules()
@@ -255,8 +256,10 @@ def main() -> int:
 
     if args.scan:
         try:
-            scan_logs(args.scan, rules, fmt=args.scan_format,
-                      output_json=args.json)
+            result = scan_logs(args.scan, rules, fmt=args.scan_format,
+                               output_json=args.json)
+            if result < 0:
+                errors += 1
         except (ValueError, OSError) as exc:
             from siemforge.display import err
             err(str(exc))
@@ -269,9 +272,10 @@ def main() -> int:
         hint = "Run with --help for all options or --export-all to export everything."
         print(f"\n  {C.DIM}{hint}{C.RESET}")
 
-    print(f"\n{DIV}")
-    print(f"  {C.CYAN}SIEMForge -- Detection engineering made portable.{C.RESET}")
-    print(f"{DIV}\n")
+    if not args.json:
+        print(f"\n{DIV}")
+        print(f"  {C.CYAN}SIEMForge -- Detection engineering made portable.{C.RESET}")
+        print(f"{DIV}\n")
 
     return 1 if errors else 0
 
