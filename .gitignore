@@ -22,6 +22,8 @@ dist/
 .coverage
 htmlcov/
 
+PLAN_TODAY.md
+
 # OS files
 .DS_Store
 Thumbs.db
