@@ -23,6 +23,26 @@ from siemforge.validator import validate_rules
 CONVERT_EXTENSIONS = {"splunk": ".spl", "elastic": ".lucene", "kibana": ".kql"}
 
 
+def _resolve_safe_output_dir(raw: str) -> Path:
+    """Resolve a user-supplied output directory, rejecting traversal outside CWD.
+
+    Absolute paths are allowed (the user explicitly opted in). Relative paths
+    must resolve to a location beneath the current working directory.
+    """
+    candidate = Path(raw)
+    resolved = (candidate if candidate.is_absolute()
+                else Path.cwd() / candidate).resolve()
+    if not candidate.is_absolute():
+        cwd = Path.cwd().resolve()
+        try:
+            resolved.relative_to(cwd)
+        except ValueError:
+            raise ValueError(
+                f"Refusing output directory that escapes CWD: {raw}"
+            )
+    return resolved
+
+
 def convert_rules(
     rules: dict[str, dict],
     backend_name: str,
@@ -47,24 +67,29 @@ def convert_rules(
         if single_rule not in rules:
             _err(f"Rule not found: {single_rule}")
             info("Available rules: " + ", ".join(sorted(rules.keys())))
-            return
+            return 1
         rules = {single_rule: rules[single_rule]}
 
     header("CONVERTING SIGMA RULES \u2192 " + backend_name.upper())
 
     if output_dir:
-        out_path = Path(output_dir)
+        try:
+            out_path = _resolve_safe_output_dir(output_dir)
+        except ValueError as exc:
+            _err(str(exc))
+            return 1
+
         if dry_run:
             for filename in rules:
                 stem = filename.rsplit(".", 1)[0]
                 info(f"Would write {out_path / (stem + ext)}")
-            return
+            return 0
 
         try:
             out_path.mkdir(parents=True, exist_ok=True)
         except OSError as e:
             _err(f"Cannot create directory {output_dir}: {e}")
-            return
+            return 1
 
         for filename, rule in rules.items():
             stem = filename.rsplit(".", 1)[0]
@@ -204,6 +229,22 @@ def main() -> int:
     ran_something = False
     errors = 0
     dry_run = args.dry_run
+
+    if args.output_dir:
+        try:
+            _resolve_safe_output_dir(args.output_dir)
+        except ValueError as exc:
+            from siemforge.display import err
+            err(str(exc))
+            return 1
+
+    if args.convert_output:
+        try:
+            _resolve_safe_output_dir(args.convert_output)
+        except ValueError as exc:
+            from siemforge.display import err
+            err(str(exc))
+            return 1
 
     if args.export_all:
         export_all(rules, output_dir=args.output_dir or "siemforge_export", dry_run=dry_run)
