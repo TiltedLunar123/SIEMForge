@@ -142,3 +142,42 @@ class TestCLIExport:
         result = _run("--convert", "splunk", "--convert-output", str(tmp_path))
         assert result.returncode == 0
         assert list(tmp_path.glob("*.spl"))
+
+
+class TestCLIErrorPaths:
+    """Regression tests: convert_rules must return an int, not None."""
+
+    def test_convert_unknown_single_rule_exits_cleanly(self):
+        result = _run("--convert", "splunk", "--convert-rule", "does_not_exist.yml")
+        assert result.returncode != 0
+        assert "not found" in result.stdout.lower() or "not found" in result.stderr.lower()
+        assert "TypeError" not in result.stdout
+        assert "TypeError" not in result.stderr
+        assert "NoneType" not in result.stdout
+        assert "NoneType" not in result.stderr
+
+    def test_convert_rule_dry_run_output_dir_exits_cleanly(self, tmp_path):
+        result = _run("--convert", "splunk", "--convert-output", str(tmp_path), "--dry-run")
+        assert result.returncode == 0
+        assert "TypeError" not in result.stdout + result.stderr
+
+
+class TestOutputDirSafety:
+    """Path traversal checks for --output-dir and --convert-output."""
+
+    def test_rejects_parent_traversal_output_dir(self):
+        result = _run("--sigma", "--output-dir", "../escape_target")
+        assert result.returncode != 0
+        combined = result.stdout + result.stderr
+        assert "escapes cwd" in combined.lower()
+
+    def test_rejects_parent_traversal_convert_output(self):
+        result = _run("--convert", "splunk", "--convert-output", "../escape_target")
+        assert result.returncode != 0
+        combined = result.stdout + result.stderr
+        assert "escapes cwd" in combined.lower()
+
+    def test_allows_absolute_output_dir(self, tmp_path):
+        result = _run("--sigma", "--output-dir", str(tmp_path.resolve()))
+        assert result.returncode == 0
+        assert list(tmp_path.glob("*.yml"))
