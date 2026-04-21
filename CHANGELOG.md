@@ -2,6 +2,15 @@
 
 All notable changes to SIEMForge are documented here.
 
+## [Unreleased]
+
+### Fixed
+- `convert_rules()` error paths now return an int instead of `None`, fixing a `TypeError` crash when `main()` added the return value to `errors` ([#1], [#19]).
+- `load_config_file()` raises `ConfigFileError` with a descriptive message when a config file is missing instead of leaking a bare `FileNotFoundError` ([#3]).
+
+### Security
+- `--output-dir` and `--convert-output` values are now rejected when they resolve outside the current working directory via parent-traversal segments; absolute paths remain allowed as an explicit opt-in ([#11]).
+
 ## [3.1.0] - 2026-04-06
 
 ### Added
