@@ -28,8 +28,26 @@ def load_sigma_rules(rules_dir: Path | None = None) -> dict[str, dict]:
     return rules
 
 
+class ConfigFileError(OSError):
+    """Raised when a config file cannot be loaded."""
+
+
 def load_config_file(filename: str, configs_dir: Path | None = None) -> str:
-    """Load a config file (XML) from the configs directory."""
+    """Load a config file (XML) from the configs directory.
+
+    Raises ConfigFileError (subclass of OSError) with a descriptive message
+    when the file is missing or unreadable, so callers already catching
+    OSError continue to work unchanged.
+    """
     configs_dir = configs_dir or CONFIGS_DIR
     filepath = configs_dir / filename
-    return filepath.read_text(encoding="utf-8")
+    try:
+        return filepath.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise ConfigFileError(
+            f"Config file not found: {filepath}"
+        ) from exc
+    except OSError as exc:
+        raise ConfigFileError(
+            f"Cannot read config file {filepath}: {exc}"
+        ) from exc

@@ -80,5 +80,22 @@ class TestLoadConfigFile:
         assert "<localfile>" in content
 
     def test_raises_for_missing_file(self):
-        with pytest.raises(FileNotFoundError):
+        from siemforge.loader import ConfigFileError
+        with pytest.raises(ConfigFileError) as exc_info:
             load_config_file("nonexistent.xml")
+        assert "not found" in str(exc_info.value)
+        assert "nonexistent.xml" in str(exc_info.value)
+
+    def test_missing_file_error_is_caught_as_oserror(self):
+        """ConfigFileError inherits OSError so existing export callers still work."""
+        with pytest.raises(OSError):
+            load_config_file("does_not_exist.xml")
+
+    def test_uses_custom_configs_dir(self, tmp_path):
+        from siemforge.loader import ConfigFileError
+        custom = tmp_path / "configs"
+        custom.mkdir()
+        (custom / "sample.xml").write_text("<root/>", encoding="utf-8")
+        assert load_config_file("sample.xml", configs_dir=custom) == "<root/>"
+        with pytest.raises(ConfigFileError):
+            load_config_file("missing.xml", configs_dir=custom)
