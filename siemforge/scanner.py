@@ -65,8 +65,20 @@ def _parse_syslog(path: Path) -> list[dict]:
 
 def _parse_csv_log(path: Path) -> list[dict]:
     with open(path, encoding="utf-8", newline="") as fh:
-        reader = csv.DictReader(fh)
-        return [dict(row) for row in reader]
+        sample = fh.read(4096)
+        if not sample.strip():
+            return []
+        try:
+            has_header = csv.Sniffer().has_header(sample)
+        except csv.Error:
+            has_header = False
+        fh.seek(0)
+        if has_header:
+            return [dict(row) for row in csv.DictReader(fh)]
+        events: list[dict] = []
+        for row in csv.reader(fh):
+            events.append({f"col_{i}": cell for i, cell in enumerate(row)})
+        return events
 
 
 def parse_log_file(path: Path, fmt: str | None = None) -> list[dict]:
