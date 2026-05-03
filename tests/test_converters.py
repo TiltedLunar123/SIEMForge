@@ -195,6 +195,19 @@ class TestSplunkConverter:
         assert '"Failed password"' in result
         assert '"authentication failure"' in result
 
+    def test_join_and_uses_explicit_and(self):
+        result = self.conv.join_and(['EventType="failure"', 'host="alpha"'])
+        assert result == 'EventType="failure" AND host="alpha"'
+
+    def test_join_and_with_or_clause_is_unambiguous(self):
+        or_clause = self.conv.join_or(['host="a"', 'host="b"'])
+        result = self.conv.join_and([or_clause, 'EventType="failure"'])
+        assert ' AND ' in result
+        assert '(host="a" OR host="b")' in result
+
+    def test_join_and_single_clause_unchanged(self):
+        assert self.conv.join_and(['EventType="failure"']) == 'EventType="failure"'
+
     def test_full_rule_ssh_bruteforce(self):
         rule_path = RULES_DIR / "ssh_bruteforce_burst.yml"
         rule = yaml.safe_load(rule_path.read_text(encoding="utf-8"))

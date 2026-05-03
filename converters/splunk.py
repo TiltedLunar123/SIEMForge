@@ -24,7 +24,7 @@ class SplunkConverter(BaseConverter):
     def join_and(self, clauses: list) -> str:
         if len(clauses) == 1:
             return clauses[0]
-        return " ".join(clauses)
+        return " AND ".join(clauses)
 
     def join_or(self, clauses: list) -> str:
         if len(clauses) == 1:
