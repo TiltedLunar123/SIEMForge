@@ -189,6 +189,24 @@ class TestParseLogFileEdgeCases:
         assert len(events) == 2
         assert events[0]["name"] == "alpha"
 
+    def test_csv_without_header_uses_positional_keys(self, tmp_path):
+        f = tmp_path / "noheader.csv"
+        f.write_text("192.168.1.1,80,SYN\n10.0.0.5,443,ACK\n", encoding="utf-8")
+        events = parse_log_file(f, fmt="csv")
+        assert len(events) == 2
+        assert events[0] == {"col_0": "192.168.1.1", "col_1": "80", "col_2": "SYN"}
+        assert events[1]["col_2"] == "ACK"
+
+    def test_csv_empty_file_returns_no_events(self, tmp_path):
+        f = tmp_path / "empty.csv"
+        f.write_text("", encoding="utf-8")
+        assert parse_log_file(f, fmt="csv") == []
+
+    def test_csv_whitespace_only_returns_no_events(self, tmp_path):
+        f = tmp_path / "blank.csv"
+        f.write_text("   \n\n", encoding="utf-8")
+        assert parse_log_file(f, fmt="csv") == []
+
     def test_syslog_nonmatching_line_fallback(self, tmp_path):
         f = tmp_path / "odd.syslog"
         f.write_text("this is not a syslog line\n", encoding="utf-8")
