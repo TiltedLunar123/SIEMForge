@@ -38,9 +38,9 @@ jobs:
 
       - name: Smoke test converters
         run: |
-          python -m siemforge --convert splunk > /dev/null
-          python -m siemforge --convert elastic > /dev/null
-          python -m siemforge --convert kibana > /dev/null
+          python -m siemforge --convert splunk
+          python -m siemforge --convert elastic
+          python -m siemforge --convert kibana
         shell: bash
 
       - name: Smoke test scanner
