@@ -91,6 +91,20 @@ Output results as machine-readable JSON:
 python -m siemforge --scan events.json --json
 ```
 
+### File Size Limit
+
+The scanner reads each log file fully into memory, so it refuses any
+file over 100 MB by default to avoid runaway memory use on huge or
+attacker-supplied logs. Raise the ceiling with an env var if you need
+to scan a larger file:
+
+```bash
+SIEMFORGE_MAX_LOG_BYTES=524288000 python -m siemforge --scan big.jsonl
+```
+
+The value is interpreted as a byte count. Non-numeric or negative
+values are ignored and the 100 MB default applies.
+
 ### Example Output
 
 ```

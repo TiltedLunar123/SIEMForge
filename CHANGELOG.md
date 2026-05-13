@@ -10,6 +10,7 @@ All notable changes to SIEMForge are documented here.
 
 ### Security
 - `--output-dir` and `--convert-output` values are now rejected when they resolve outside the current working directory via parent-traversal segments; absolute paths remain allowed as an explicit opt-in ([#11]).
+- Log scanner rejects files over 100 MB by default, so a huge or attacker-supplied log cannot exhaust memory via `path.read_text()`. The limit is overridable through the `SIEMFORGE_MAX_LOG_BYTES` env var ([#2]).
 
 ## [3.1.0] - 2026-04-06
 
