@@ -8,9 +8,12 @@ import pytest
 
 from siemforge.loader import load_sigma_rules
 from siemforge.scanner import (
+    MAX_LOG_FILE_BYTES,
+    LogFileTooLargeError,
     _flatten,
     _match_selection,
     _match_value,
+    _resolve_max_bytes,
     match_rule,
     parse_log_file,
     scan_logs,
@@ -276,3 +279,58 @@ class TestSampleDataCoverage:
         count = scan_logs(str(SAMPLES_DIR / "process_injection.json"), rules)
         # May or may not trigger depending on rule field mapping
         assert count >= 0
+
+
+class TestLogSizeCap:
+
+    def test_existing_samples_under_default_cap(self):
+        # Regression: every bundled sample is well under 100 MB and must
+        # keep parsing after the size guard was added.
+        events = parse_log_file(SAMPLES_DIR / "powershell_attack.json")
+        assert len(events) == 4
+
+    def test_oversized_json_rejected(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("SIEMFORGE_MAX_LOG_BYTES", "100")
+        big = tmp_path / "big.json"
+        big.write_text("[" + ",".join(["{}"] * 200) + "]", encoding="utf-8")
+        with pytest.raises(LogFileTooLargeError) as exc:
+            parse_log_file(big, fmt="json")
+        msg = str(exc.value)
+        assert "100-byte limit" in msg
+        assert "SIEMFORGE_MAX_LOG_BYTES" in msg
+
+    def test_oversized_syslog_rejected(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("SIEMFORGE_MAX_LOG_BYTES", "50")
+        big = tmp_path / "big.log"
+        big.write_text("x" * 500, encoding="utf-8")
+        with pytest.raises(LogFileTooLargeError):
+            parse_log_file(big, fmt="syslog")
+
+    def test_oversized_csv_rejected(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("SIEMFORGE_MAX_LOG_BYTES", "50")
+        big = tmp_path / "big.csv"
+        big.write_text("a,b\n" + "1,2\n" * 200, encoding="utf-8")
+        with pytest.raises(LogFileTooLargeError):
+            parse_log_file(big, fmt="csv")
+
+    def test_env_override_accepts_positive_int(self, monkeypatch):
+        monkeypatch.setenv("SIEMFORGE_MAX_LOG_BYTES", "1234")
+        assert _resolve_max_bytes() == 1234
+
+    def test_env_override_falls_back_on_garbage(self, monkeypatch):
+        monkeypatch.setenv("SIEMFORGE_MAX_LOG_BYTES", "not-a-number")
+        assert _resolve_max_bytes() == MAX_LOG_FILE_BYTES
+
+    def test_env_override_falls_back_on_negative(self, monkeypatch):
+        monkeypatch.setenv("SIEMFORGE_MAX_LOG_BYTES", "-1")
+        assert _resolve_max_bytes() == MAX_LOG_FILE_BYTES
+
+    def test_scan_logs_surfaces_size_error(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setenv("SIEMFORGE_MAX_LOG_BYTES", "20")
+        big = tmp_path / "big.json"
+        big.write_text("[" + ",".join(["{}"] * 50) + "]", encoding="utf-8")
+        rc = scan_logs(str(big), {})
+        assert rc == -1
+        out = capsys.readouterr().out
+        assert "Failed to parse" in out
+        assert "20-byte limit" in out

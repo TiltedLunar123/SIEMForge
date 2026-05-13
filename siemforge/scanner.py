@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -14,8 +15,45 @@ from typing import Any
 from siemforge.display import C, bullet, err, header, info, ok
 from siemforge.mitre import MITRE_MAP
 
+# Default ceiling for any single log file the scanner will read. The whole
+# file is pulled into memory by every parse path here, so an unbounded read
+# on an attacker-supplied or accidentally-huge log turns into a memory DoS.
+# Override at runtime with SIEMFORGE_MAX_LOG_BYTES=<positive integer bytes>.
+MAX_LOG_FILE_BYTES = 100 * 1024 * 1024
+
+
+class LogFileTooLargeError(OSError):
+    """Raised when a log file exceeds the configured size ceiling."""
+
+
+def _resolve_max_bytes() -> int:
+    raw = os.environ.get("SIEMFORGE_MAX_LOG_BYTES")
+    if raw is None:
+        return MAX_LOG_FILE_BYTES
+    try:
+        n = int(raw)
+    except (TypeError, ValueError):
+        return MAX_LOG_FILE_BYTES
+    if n <= 0:
+        return MAX_LOG_FILE_BYTES
+    return n
+
+
+def _check_log_size(path: Path) -> None:
+    limit = _resolve_max_bytes()
+    try:
+        size = path.stat().st_size
+    except OSError:
+        return
+    if size > limit:
+        raise LogFileTooLargeError(
+            f"Log file {path} is {size} bytes, which exceeds the "
+            f"{limit}-byte limit. Set SIEMFORGE_MAX_LOG_BYTES to raise it."
+        )
+
 
 def _parse_json_log(path: Path) -> list[dict]:
+    _check_log_size(path)
     text = path.read_text(encoding="utf-8").strip()
     if text.startswith("["):
         data = json.loads(text)
@@ -44,6 +82,7 @@ _SYSLOG_RE = re.compile(
 
 
 def _parse_syslog(path: Path) -> list[dict]:
+    _check_log_size(path)
     events = []
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
@@ -64,6 +103,7 @@ def _parse_syslog(path: Path) -> list[dict]:
 
 
 def _parse_csv_log(path: Path) -> list[dict]:
+    _check_log_size(path)
     with open(path, encoding="utf-8", newline="") as fh:
         sample = fh.read(4096)
         if not sample.strip():
