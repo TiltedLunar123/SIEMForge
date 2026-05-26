@@ -229,6 +229,67 @@ class TestSplunkConverter:
             assert len(result) > 10, f"Empty output for {rule_path.name}"
 
 
+# ── List-of-dict Detection Tests (issue #8) ────
+
+
+class TestListOfDictDetection:
+
+    def test_splunk_list_of_maps_is_or_of_groups(self):
+        conv = SplunkConverter()
+        rule = {
+            "detection": {
+                "selection": [
+                    {"Image": "powershell.exe", "User": "SYSTEM"},
+                    {"Image": "cmd.exe"},
+                ],
+                "condition": "selection",
+            }
+        }
+        result = conv.convert_rule(rule)
+        assert result == (
+            '(Image="powershell.exe" AND User="SYSTEM" OR Image="cmd.exe")'
+        )
+
+    def test_elastic_list_of_maps_is_or_of_groups(self):
+        conv = ElasticConverter()
+        rule = {
+            "detection": {
+                "selection": [
+                    {"Image": "powershell.exe"},
+                    {"Image": "cmd.exe"},
+                ],
+                "condition": "selection",
+            }
+        }
+        result = conv.convert_rule(rule)
+        assert result == '(Image:"powershell.exe" OR Image:"cmd.exe")'
+
+    def test_list_of_scalars_still_keyword(self):
+        conv = SplunkConverter()
+        rule = {
+            "detection": {
+                "keywords": ["failed", "denied"],
+                "condition": "keywords",
+            }
+        }
+        result = conv.convert_rule(rule)
+        assert result == '("failed" OR "denied")'
+
+    def test_list_of_maps_respects_modifiers(self):
+        conv = SplunkConverter()
+        rule = {
+            "detection": {
+                "selection": [
+                    {"CommandLine|contains": "-enc"},
+                    {"CommandLine|contains": "-w hidden"},
+                ],
+                "condition": "selection",
+            }
+        }
+        result = conv.convert_rule(rule)
+        assert result == '(CommandLine="*-enc*" OR CommandLine="*-w hidden*")'
+
+
 # ── Value Escaping Tests (issue #5) ────────────
 
 

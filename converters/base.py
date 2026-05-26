@@ -181,17 +181,28 @@ class BaseConverter(ABC):
             if key == "condition":
                 continue
             if isinstance(value, dict):
-                fields = []
-                for field_name, field_values in value.items():
-                    field, mods = self.parse_field_name(field_name)
-                    if not isinstance(field_values, list):
-                        field_values = [field_values]
-                    fields.append((field, mods, field_values))
-                selections[key] = fields
+                selections[key] = self._extract_fields(value)
+            elif isinstance(value, list) and value and all(
+                isinstance(item, dict) for item in value
+            ):
+                # A list of maps is an OR of alternative field groups.
+                selections[key] = {
+                    "__or_groups__": [self._extract_fields(item) for item in value]
+                }
             elif isinstance(value, list):
                 selections[key] = [("_keyword", [], value)]
 
         return self._render_ast(ast, selections)
+
+    def _extract_fields(self, mapping: dict) -> list:
+        """Turn a Sigma map into a list of (field, modifiers, values) tuples."""
+        fields = []
+        for field_name, field_values in mapping.items():
+            field, mods = self.parse_field_name(field_name)
+            if not isinstance(field_values, list):
+                field_values = [field_values]
+            fields.append((field, mods, field_values))
+        return fields
 
     def _render_ast(self, node: object, selections: dict) -> str:
         """Walk the AST and produce the query string."""
@@ -210,10 +221,18 @@ class BaseConverter(ABC):
             return self.negate(inner)
         raise ValueError(f"Unknown AST node: {node}")
 
-    def convert_selection(self, fields: list) -> str:
-        """Convert a single selection's field list to a query fragment."""
+    def convert_selection(self, selection) -> str:
+        """Convert a single selection to a query fragment.
+
+        A selection is either a list of (field, modifiers, values) tuples
+        joined with AND, or an OR group of such lists (from a Sigma
+        list-of-maps detection block).
+        """
+        if isinstance(selection, dict) and "__or_groups__" in selection:
+            rendered = [self.convert_selection(g) for g in selection["__or_groups__"]]
+            return self.join_or(rendered)
         parts = []
-        for field, mods, values in fields:
+        for field, mods, values in selection:
             parts.append(self.convert_field_match(field, mods, values))
         return self.join_and(parts)
 
