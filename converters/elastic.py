@@ -12,7 +12,7 @@ class ElasticConverter(BaseConverter):
     def convert_field_match(self, field: str, modifiers: list, values: list) -> str:
         parts = []
         for value in values:
-            wild = self.apply_wildcard(str(value), modifiers)
+            wild = self.apply_wildcard(self.escape_value(str(value)), modifiers)
             if field == "_keyword":
                 parts.append(f'"{wild}"')
             else:

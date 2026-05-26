@@ -229,6 +229,105 @@ class TestSplunkConverter:
             assert len(result) > 10, f"Empty output for {rule_path.name}"
 
 
+# ── List-of-dict Detection Tests (issue #8) ────
+
+
+class TestListOfDictDetection:
+
+    def test_splunk_list_of_maps_is_or_of_groups(self):
+        conv = SplunkConverter()
+        rule = {
+            "detection": {
+                "selection": [
+                    {"Image": "powershell.exe", "User": "SYSTEM"},
+                    {"Image": "cmd.exe"},
+                ],
+                "condition": "selection",
+            }
+        }
+        result = conv.convert_rule(rule)
+        assert result == (
+            '(Image="powershell.exe" AND User="SYSTEM" OR Image="cmd.exe")'
+        )
+
+    def test_elastic_list_of_maps_is_or_of_groups(self):
+        conv = ElasticConverter()
+        rule = {
+            "detection": {
+                "selection": [
+                    {"Image": "powershell.exe"},
+                    {"Image": "cmd.exe"},
+                ],
+                "condition": "selection",
+            }
+        }
+        result = conv.convert_rule(rule)
+        assert result == '(Image:"powershell.exe" OR Image:"cmd.exe")'
+
+    def test_list_of_scalars_still_keyword(self):
+        conv = SplunkConverter()
+        rule = {
+            "detection": {
+                "keywords": ["failed", "denied"],
+                "condition": "keywords",
+            }
+        }
+        result = conv.convert_rule(rule)
+        assert result == '("failed" OR "denied")'
+
+    def test_list_of_maps_respects_modifiers(self):
+        conv = SplunkConverter()
+        rule = {
+            "detection": {
+                "selection": [
+                    {"CommandLine|contains": "-enc"},
+                    {"CommandLine|contains": "-w hidden"},
+                ],
+                "condition": "selection",
+            }
+        }
+        result = conv.convert_rule(rule)
+        assert result == '(CommandLine="*-enc*" OR CommandLine="*-w hidden*")'
+
+
+# ── Value Escaping Tests (issue #5) ────────────
+
+
+class TestValueEscaping:
+
+    def test_splunk_escapes_embedded_quote(self):
+        conv = SplunkConverter()
+        result = conv.convert_field_match("CommandLine", [], ['say "hi"'])
+        assert result == 'CommandLine="say \\"hi\\""'
+
+    def test_elastic_escapes_embedded_quote(self):
+        conv = ElasticConverter()
+        result = conv.convert_field_match("CommandLine", [], ['say "hi"'])
+        assert result == 'CommandLine:"say \\"hi\\""'
+
+    def test_kibana_escapes_embedded_quote(self):
+        conv = KibanaConverter()
+        result = conv.convert_field_match("CommandLine", [], ['say "hi"'])
+        assert result == 'CommandLine: "say \\"hi\\""'
+
+    def test_keyword_value_quote_escaped(self):
+        conv = SplunkConverter()
+        result = conv.convert_field_match("_keyword", [], ['a "quoted" phrase'])
+        assert result == '"a \\"quoted\\" phrase"'
+
+    def test_quote_escaped_with_contains_wildcard(self):
+        conv = SplunkConverter()
+        result = conv.convert_field_match("CommandLine", ["contains"], ['x"y'])
+        assert result == 'CommandLine="*x\\"y*"'
+
+    def test_backslash_paths_left_intact(self):
+        # The rule corpus relies on literal Windows separators; escaping must
+        # not touch them.
+        conv = SplunkConverter()
+        result = conv.convert_field_match("Image", ["endswith"], ["\\\\powershell.exe"])
+        assert result == 'Image="*\\\\powershell.exe"'
+
+
 # ── Elasticsearch Tests ────────────────────────
 
 
