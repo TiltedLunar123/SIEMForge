@@ -229,6 +229,44 @@ class TestSplunkConverter:
             assert len(result) > 10, f"Empty output for {rule_path.name}"
 
 
+# ── Value Escaping Tests (issue #5) ────────────
+
+
+class TestValueEscaping:
+
+    def test_splunk_escapes_embedded_quote(self):
+        conv = SplunkConverter()
+        result = conv.convert_field_match("CommandLine", [], ['say "hi"'])
+        assert result == 'CommandLine="say \\"hi\\""'
+
+    def test_elastic_escapes_embedded_quote(self):
+        conv = ElasticConverter()
+        result = conv.convert_field_match("CommandLine", [], ['say "hi"'])
+        assert result == 'CommandLine:"say \\"hi\\""'
+
+    def test_kibana_escapes_embedded_quote(self):
+        conv = KibanaConverter()
+        result = conv.convert_field_match("CommandLine", [], ['say "hi"'])
+        assert result == 'CommandLine: "say \\"hi\\""'
+
+    def test_keyword_value_quote_escaped(self):
+        conv = SplunkConverter()
+        result = conv.convert_field_match("_keyword", [], ['a "quoted" phrase'])
+        assert result == '"a \\"quoted\\" phrase"'
+
+    def test_quote_escaped_with_contains_wildcard(self):
+        conv = SplunkConverter()
+        result = conv.convert_field_match("CommandLine", ["contains"], ['x"y'])
+        assert result == 'CommandLine="*x\\"y*"'
+
+    def test_backslash_paths_left_intact(self):
+        # The rule corpus relies on literal Windows separators; escaping must
+        # not touch them.
+        conv = SplunkConverter()
+        result = conv.convert_field_match("Image", ["endswith"], ["\\\\powershell.exe"])
+        assert result == 'Image="*\\\\powershell.exe"'
+
+
 # ── Elasticsearch Tests ────────────────────────
 
 

@@ -148,6 +148,17 @@ class BaseConverter(ABC):
         parts = field_name.split("|")
         return parts[0], parts[1:]
 
+    def escape_value(self, value: str) -> str:
+        """Escape characters that would break a quoted query string.
+
+        Embedded double quotes terminate the surrounding quoted phrase in
+        SPL, Lucene, and KQL alike, producing a syntactically invalid query.
+        Backslashes are intentionally left untouched: the rule set relies on
+        literal Windows path separators (``\\\\``) and reworking that needs a
+        wider review. Backends with extra metacharacters override this.
+        """
+        return str(value).replace('"', '\\"')
+
     def apply_wildcard(self, value: str, modifiers: list) -> str:
         """Apply Sigma modifiers to a value string."""
         val = str(value)
