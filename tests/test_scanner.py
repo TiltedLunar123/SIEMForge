@@ -10,6 +10,7 @@ from siemforge.loader import load_sigma_rules
 from siemforge.scanner import (
     MAX_LOG_FILE_BYTES,
     LogFileTooLargeError,
+    _eval_condition,
     _flatten,
     _match_selection,
     _match_value,
@@ -249,6 +250,70 @@ class TestMatchSelectionEdgeCases:
             {"a": "1"},
             {"nonexistent_field": "value"},
         )
+
+
+class TestQuantifierConditions:
+    """Sigma '1 of'/'all of' quantifier syntax in the condition parser."""
+
+    def test_one_of_them_true_when_any_matches(self):
+        sel = {"selection_a": False, "selection_b": True}
+        assert _eval_condition("1 of them", sel)
+
+    def test_one_of_them_false_when_none_match(self):
+        sel = {"selection_a": False, "selection_b": False}
+        assert not _eval_condition("1 of them", sel)
+
+    def test_all_of_them_true_when_all_match(self):
+        sel = {"selection_a": True, "selection_b": True}
+        assert _eval_condition("all of them", sel)
+
+    def test_all_of_them_false_when_one_fails(self):
+        sel = {"selection_a": True, "selection_b": False}
+        assert not _eval_condition("all of them", sel)
+
+    def test_all_of_them_false_with_no_selections(self):
+        assert not _eval_condition("all of them", {})
+
+    def test_one_of_pattern_globs_selection_names(self):
+        sel = {"selection_net": False, "selection_proc": True, "filter_svc": True}
+        # Only the selection_* names are considered; filter_svc is ignored.
+        assert _eval_condition("1 of selection_*", sel)
+
+    def test_all_of_pattern_ignores_nonmatching_names(self):
+        sel = {"selection_net": True, "selection_proc": True, "filter_svc": False}
+        assert _eval_condition("all of selection_*", sel)
+
+    def test_all_of_pattern_false_when_a_match_target_fails(self):
+        sel = {"selection_net": True, "selection_proc": False, "filter_svc": True}
+        assert not _eval_condition("all of selection_*", sel)
+
+    def test_n_of_pattern_requires_at_least_n(self):
+        sel = {"selection_a": True, "selection_b": True, "selection_c": False}
+        assert _eval_condition("2 of selection_*", sel)
+        assert not _eval_condition("3 of selection_*", sel)
+
+    def test_pattern_with_no_matches_is_false(self):
+        sel = {"selection_a": True}
+        assert not _eval_condition("1 of filter_*", sel)
+
+    def test_quantifier_combines_with_not_and_and(self):
+        sel = {"selection": True, "filter_a": False, "filter_b": False}
+        assert _eval_condition("selection and not 1 of filter_*", sel)
+        sel["filter_a"] = True
+        assert not _eval_condition("selection and not 1 of filter_*", sel)
+
+    def test_match_rule_integration_one_of_them(self):
+        rule = {
+            "detection": {
+                "selection_cmd": {"Image|endswith": "\\powershell.exe"},
+                "selection_kw": {"CommandLine|contains": "-enc"},
+                "condition": "1 of them",
+            }
+        }
+        assert match_rule({"Image": "C:\\Windows\\System32\\cmd.exe",
+                           "CommandLine": "cmd.exe -enc whatever"}, rule)
+        assert not match_rule({"Image": "C:\\Windows\\notepad.exe",
+                               "CommandLine": "notepad.exe file.txt"}, rule)
 
 
 class TestSampleDataCoverage:

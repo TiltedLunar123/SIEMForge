@@ -6,6 +6,7 @@ Condition evaluation uses a safe recursive-descent parser (NO eval).
 from __future__ import annotations
 
 import csv
+import fnmatch
 import json
 import os
 import re
@@ -209,13 +210,40 @@ def _match_selection(event: dict[str, str], selection: dict) -> bool:
 
 # ---- Condition parser (SAFE -- no eval) ----
 
-_COND_TOKEN_RE = re.compile(r'\s*(and|or|not|\(|\)|\w+)\s*', re.IGNORECASE)
+# Pattern tokens keep '*' so quantifier targets like "selection_*" survive
+# tokenization; the boolean keywords and parens are matched ahead of them.
+_COND_TOKEN_RE = re.compile(r'\s*(and|or|not|\(|\)|[\w*]+)\s*', re.IGNORECASE)
 
 
 def _tokenize_condition(condition: str) -> list[str]:
     condition = " ".join(condition.split())
     tokens = _COND_TOKEN_RE.findall(condition)
     return [t for t in tokens if t.strip()]
+
+
+def _eval_quantifier(quant: str, target: str, selections: dict[str, bool]) -> bool:
+    """Evaluate a Sigma quantifier atom such as "1 of them" or "all of selection_*".
+
+    ``quant`` is either "all" or a decimal count. ``target`` is "them" (every
+    selection) or a glob matched case-insensitively against the selection
+    names. An empty target set is never a match, so "all of them" with no
+    selections returns False rather than being vacuously true.
+    """
+    if target.lower() == "them":
+        matched = list(selections.values())
+    else:
+        pat = target.lower()
+        matched = [v for k, v in selections.items() if fnmatch.fnmatchcase(k.lower(), pat)]
+    if not matched:
+        return False
+    hits = sum(1 for v in matched if v)
+    if quant == "all":
+        return hits == len(matched)
+    try:
+        n = int(quant)
+    except ValueError:
+        return False
+    return hits >= n
 
 
 def _eval_condition(condition: str, selections: dict[str, bool]) -> bool:
@@ -260,6 +288,15 @@ def _eval_condition(condition: str, selections: dict[str, bool]) -> bool:
             if peek() == ")":
                 advance()
             return result
+        # Quantifier atoms: "all of <target>" or "<N> of <target>", where
+        # <target> is "them" or a selection-name glob like "selection_*".
+        low = t.lower() if t else ""
+        nxt = tokens[pos[0] + 1].lower() if pos[0] + 1 < len(tokens) else None
+        if (low == "all" or low.isdigit()) and nxt == "of":
+            advance()  # quantifier
+            advance()  # "of"
+            target = advance() if peek() is not None else "them"
+            return _eval_quantifier(low, target, selections)
         name = advance()
         return selections.get(name, False)
 
