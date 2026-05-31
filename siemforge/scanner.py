@@ -2,6 +2,13 @@
 
 Supports JSON (array or JSONL), syslog (RFC 3164), and CSV formats.
 Condition evaluation uses a safe recursive-descent parser (NO eval).
+
+Matching is stateless: each rule is evaluated against one event at a time
+with no memory between events. Count-based or time-window logic (a rule's
+``custom.threshold_count`` / ``threshold_window``) is therefore not applied
+here, so a threshold rule alerts on its first matching event. That
+aggregation is the deploy-target SIEM's job; see the "Stateless Matching"
+section of the README.
 """
 from __future__ import annotations
 

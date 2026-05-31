@@ -105,6 +105,21 @@ SIEMFORGE_MAX_LOG_BYTES=524288000 python -m siemforge --scan big.jsonl
 The value is interpreted as a byte count. Non-numeric or negative
 values are ignored and the 100 MB default applies.
 
+### Stateless Matching and Thresholds
+
+The scanner evaluates each rule against one event at a time. It has no
+state between events, so count-based or time-window logic is not applied.
+A rule that carries a `custom.threshold_count` (for example the SSH
+brute-force rule, which is meant to fire after ten failures in a window)
+will instead alert on the very first matching event.
+
+This is fine for content authoring and for spot-checking detection logic,
+which is what the scanner is for. It is not a substitute for the
+aggregation a real SIEM does. When you deploy these rules to Wazuh, Splunk,
+or Elastic, the threshold fields are there for that engine to honor. If you
+need correlated, count-based alerts locally, treat that as a known gap
+rather than something the scanner already does.
+
 ### Example Output
 
 ```
