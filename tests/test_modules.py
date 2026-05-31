@@ -55,6 +55,21 @@ class TestCollectTechniques:
         assert "Total Techniques Covered" in out
 
 
+class TestBundledRulesAreMapped:
+    """Guard: no shipped rule may reference a technique missing from MITRE_MAP."""
+
+    def test_every_bundled_technique_is_in_the_map(self):
+        from siemforge.loader import load_sigma_rules
+
+        rules = load_sigma_rules()
+        techniques, _ = mitre.collect_techniques(rules)
+        missing = sorted(t for t in techniques if t not in mitre.MITRE_MAP)
+        assert not missing, (
+            f"Bundled rules reference techniques not in MITRE_MAP: {missing}. "
+            "Add them to siemforge/mitre.py so coverage doesn't show 'Unknown'."
+        )
+
+
 # ── stats.py ───────────────────────────────────
 
 

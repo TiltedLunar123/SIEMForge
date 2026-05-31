@@ -35,8 +35,11 @@ ruff check . --fix  # auto-fix
 3. Include MITRE ATT&CK tags (e.g., `attack.t1059.001`)
 4. Include `falsepositives` section
 5. Add a sample log event to `samples/` that triggers the rule
-6. Run `python -m siemforge --validate` to verify
-7. Run `pytest tests/ -v` to confirm nothing breaks
+6. If your rule uses a technique that isn't already in `MITRE_MAP`
+   (`siemforge/mitre.py`), add it. Otherwise the coverage view labels it
+   "Unknown", and the bundled-rule test in `tests/test_modules.py` fails.
+7. Run `python -m siemforge --validate` to verify
+8. Run `pytest tests/ -v` to confirm nothing breaks
 
 ### Rule Template
 
@@ -78,6 +81,7 @@ level: medium
 - [ ] Has a unique uuid4 `id`
 - [ ] All required fields present (`title`, `id`, `status`, `description`, `author`, `date`, `logsource`, `detection`, `level`)
 - [ ] MITRE ATT&CK tags included and valid
+- [ ] Any new technique is added to `MITRE_MAP` in `siemforge/mitre.py`
 - [ ] `falsepositives` section is populated
 - [ ] Sample log event added to `samples/`
 - [ ] `python -m siemforge --validate` passes

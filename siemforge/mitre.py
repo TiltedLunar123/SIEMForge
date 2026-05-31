@@ -1,4 +1,15 @@
-"""MITRE ATT&CK mapping and coverage display."""
+"""MITRE ATT&CK mapping and coverage display.
+
+MITRE_MAP is the lookup used to turn an attack.tXXXX tag into a human name
+and tactic. Every technique referenced by a bundled Sigma rule has to live
+here, otherwise it renders as "Unknown" in the coverage view. A test in
+tests/test_modules.py enforces that for the shipped rule set, so a new rule
+that adds a technique will fail CI until the technique is added below.
+
+Each entry stores a single primary tactic to keep the schema flat. A handful
+of techniques map to more than one tactic in ATT&CK; the primary one is used
+here. Names and tactics follow the ATT&CK matrix at https://attack.mitre.org.
+"""
 from __future__ import annotations
 
 from siemforge.display import _LINE_CHAR, C, header
@@ -20,6 +31,26 @@ MITRE_MAP: dict[str, dict[str, str]] = {
     "T1570": {"name": "Lateral Tool Transfer", "tactic": "Lateral Movement"},
     "T1053.005": {"name": "Scheduled Task", "tactic": "Persistence"},
     "T1543.003": {"name": "Create/Modify System Service", "tactic": "Persistence"},
+    # Commonly referenced techniques, pre-mapped so future rules don't show
+    # up as "Unknown". Single primary tactic each per the note above.
+    "T1003": {"name": "OS Credential Dumping", "tactic": "Credential Access"},
+    "T1003.003": {"name": "OS Credential Dumping: NTDS", "tactic": "Credential Access"},
+    "T1018": {"name": "Remote System Discovery", "tactic": "Discovery"},
+    "T1036": {"name": "Masquerading", "tactic": "Defense Evasion"},
+    "T1047": {"name": "Windows Management Instrumentation", "tactic": "Execution"},
+    "T1057": {"name": "Process Discovery", "tactic": "Discovery"},
+    "T1059": {"name": "Command and Scripting Interpreter", "tactic": "Execution"},
+    "T1059.003": {"name": "Windows Command Shell", "tactic": "Execution"},
+    "T1071.001": {"name": "Application Layer Protocol: Web Protocols",
+                  "tactic": "Command and Control"},
+    "T1082": {"name": "System Information Discovery", "tactic": "Discovery"},
+    "T1110": {"name": "Brute Force", "tactic": "Credential Access"},
+    "T1112": {"name": "Modify Registry", "tactic": "Defense Evasion"},
+    "T1140": {"name": "Deobfuscate/Decode Files or Information", "tactic": "Defense Evasion"},
+    "T1218": {"name": "System Binary Proxy Execution", "tactic": "Defense Evasion"},
+    "T1486": {"name": "Data Encrypted for Impact", "tactic": "Impact"},
+    "T1490": {"name": "Inhibit System Recovery", "tactic": "Impact"},
+    "T1567": {"name": "Exfiltration Over Web Service", "tactic": "Exfiltration"},
 }
 
 
