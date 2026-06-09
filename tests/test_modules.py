@@ -43,6 +43,13 @@ class TestCollectTechniques:
         techniques, _ = mitre.collect_techniques(rules)
         assert techniques == {"T1059.001"}
 
+    def test_multi_tactic_technique_counts_every_tactic(self):
+        # T1053.005 (Scheduled Task) is filed under three tactics in ATT&CK.
+        rules = {"r": {"tags": ["attack.t1053.005"]}}
+        techniques, tactics = mitre.collect_techniques(rules)
+        assert techniques == {"T1053.005"}
+        assert tactics == {"Execution", "Persistence", "Privilege Escalation"}
+
     def test_show_mitre_coverage_runs(self, capsys):
         rules = {
             "a": {"tags": ["attack.t1059.001"]},
@@ -53,6 +60,38 @@ class TestCollectTechniques:
         assert "T1059.001" in out
         assert "Unknown" in out
         assert "Total Techniques Covered" in out
+
+
+class TestTacticsFor:
+
+    def test_single_tactic_returns_one(self):
+        assert mitre.tactics_for("T1059.001") == ["Execution"]
+
+    def test_multi_tactic_returns_full_list_primary_first(self):
+        result = mitre.tactics_for("T1547.001")
+        assert result[0] == "Persistence"
+        assert set(result) == {"Persistence", "Privilege Escalation"}
+
+    def test_unknown_id_returns_empty(self):
+        assert mitre.tactics_for("T9999.999") == []
+
+
+class TestMitreMapConsistency:
+    """Guard the shape of every MITRE_MAP entry."""
+
+    def test_every_entry_has_name_and_tactic(self):
+        for tid, entry in mitre.MITRE_MAP.items():
+            assert isinstance(entry.get("name"), str), tid
+            assert isinstance(entry.get("tactic"), str), tid
+
+    def test_primary_tactic_leads_the_list(self):
+        for tid, entry in mitre.MITRE_MAP.items():
+            tactics = entry.get("tactics")
+            if tactics is None:
+                continue
+            assert isinstance(tactics, list) and len(tactics) >= 2, tid
+            assert tactics[0] == entry["tactic"], tid
+            assert len(tactics) == len(set(tactics)), tid
 
 
 class TestBundledRulesAreMapped:
