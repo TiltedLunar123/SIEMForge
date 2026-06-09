@@ -38,6 +38,9 @@ ruff check . --fix  # auto-fix
 6. If your rule uses a technique that isn't already in `MITRE_MAP`
    (`siemforge/mitre.py`), add it. Otherwise the coverage view labels it
    "Unknown", and the bundled-rule test in `tests/test_modules.py` fails.
+   Set `tactic` to the primary ATT&CK tactic. If the technique is filed under
+   more than one tactic, also add a `tactics` list with all of them, primary
+   first, so coverage counts each tactic.
 7. Run `python -m siemforge --validate` to verify
 8. Run `pytest tests/ -v` to confirm nothing breaks
 
