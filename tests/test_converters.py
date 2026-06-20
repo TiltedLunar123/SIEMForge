@@ -408,7 +408,8 @@ class TestCLIConvert:
     def test_convert_splunk_runs(self):
         result = subprocess.run(
             [sys.executable, "siemforge.py", "--convert", "splunk"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True, timeout=30,
+            encoding="utf-8", errors="replace",
             env={**os.environ, "PYTHONUTF8": "1"},
         )
         assert result.returncode == 0
@@ -416,7 +417,8 @@ class TestCLIConvert:
     def test_convert_elastic_runs(self):
         result = subprocess.run(
             [sys.executable, "siemforge.py", "--convert", "elastic"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True, timeout=30,
+            encoding="utf-8", errors="replace",
             env={**os.environ, "PYTHONUTF8": "1"},
         )
         assert result.returncode == 0
@@ -424,7 +426,8 @@ class TestCLIConvert:
     def test_convert_kibana_runs(self):
         result = subprocess.run(
             [sys.executable, "siemforge.py", "--convert", "kibana"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True, timeout=30,
+            encoding="utf-8", errors="replace",
             env={**os.environ, "PYTHONUTF8": "1"},
         )
         assert result.returncode == 0
@@ -432,7 +435,8 @@ class TestCLIConvert:
     def test_convert_invalid_backend_fails(self):
         result = subprocess.run(
             [sys.executable, "siemforge.py", "--convert", "invalid"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True, timeout=30,
+            encoding="utf-8", errors="replace",
             env={**os.environ, "PYTHONUTF8": "1"},
         )
         assert result.returncode != 0
@@ -441,7 +445,8 @@ class TestCLIConvert:
         result = subprocess.run(
             [sys.executable, "siemforge.py", "--convert", "splunk",
              "--convert-output", str(tmp_path)],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True, timeout=30,
+            encoding="utf-8", errors="replace",
             env={**os.environ, "PYTHONUTF8": "1"},
         )
         assert result.returncode == 0

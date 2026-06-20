@@ -4,12 +4,16 @@ All notable changes to SIEMForge are documented here.
 
 ## [Unreleased]
 
+### Added
+- Direct tests for the standalone Sysmon and Wazuh exporters. Both run through the CLI but had no tests aimed at them, so this covers the dry-run preview and the real file write for each, lifting `export.py` from 56% to 81% coverage.
+
 ### Changed
 - MITRE coverage now records every tactic a technique belongs to instead of a single primary one. Techniques that ATT&CK files under several tactics (scheduled task, service creation, registry run keys, process injection, valid accounts) show up under each, so the coverage view no longer undercounts. The map also gained several commonly referenced techniques so they stop rendering as "Unknown" ([#16]).
 
 ### Fixed
 - `convert_rules()` error paths now return an int instead of `None`, fixing a `TypeError` crash when `main()` added the return value to `errors` ([#1], [#19]).
 - `load_config_file()` raises `ConfigFileError` with a descriptive message when a config file is missing instead of leaking a bare `FileNotFoundError` ([#3]).
+- The test suite no longer logs `UnicodeDecodeError` warnings on Windows. The converter CLI tests read the tool's UTF-8 output through the default cp1252 codec; they now decode as UTF-8 with `errors="replace"`, the same way the rest of the suite does.
 
 ### Security
 - `--output-dir` and `--convert-output` values are now rejected when they resolve outside the current working directory via parent-traversal segments; absolute paths remain allowed as an explicit opt-in ([#11]).
