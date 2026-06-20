@@ -10,6 +10,7 @@ from siemforge import (
     export_sigma_rules,
     load_sigma_rules,
 )
+from siemforge.export import export_sysmon_config, export_wazuh_rules
 from siemforge.stats import count_levels, show_rule_summary, show_stats, show_stats_json
 
 
@@ -111,6 +112,51 @@ class TestExportAll:
         assert manifest["tool"] == "SIEMForge"
         assert manifest["sigma_count"] == len(rules)
         assert len(manifest["mitre_techniques"]) > 0
+
+
+class TestExportSysmonConfig:
+    """Tests for the standalone Sysmon config export."""
+
+    def test_dry_run_creates_no_files(self, tmp_path):
+        out_dir = tmp_path / "sysmon"
+        result = export_sysmon_config(output_dir=str(out_dir), dry_run=True)
+        assert not out_dir.exists()
+        assert result == out_dir / "sysmon_config.xml"
+
+    def test_export_writes_config(self, tmp_path):
+        out_dir = tmp_path / "sysmon"
+        result = export_sysmon_config(output_dir=str(out_dir), dry_run=False)
+        written = out_dir / "sysmon_config.xml"
+        assert written.is_file()
+        assert result == written
+        assert written.read_text(encoding="utf-8").strip()
+
+    def test_install_commands_printed(self, tmp_path, capsys):
+        out_dir = tmp_path / "sysmon"
+        export_sysmon_config(output_dir=str(out_dir), dry_run=False)
+        output = capsys.readouterr().out
+        assert "sysmon64.exe" in output
+
+
+class TestExportWazuhRules:
+    """Tests for the standalone Wazuh rules export."""
+
+    def test_dry_run_creates_no_files(self, tmp_path):
+        out_dir = tmp_path / "wazuh"
+        result = export_wazuh_rules(output_dir=str(out_dir), dry_run=True)
+        assert not out_dir.exists()
+        assert result == out_dir
+
+    def test_export_writes_both_files(self, tmp_path):
+        out_dir = tmp_path / "wazuh"
+        result = export_wazuh_rules(output_dir=str(out_dir), dry_run=False)
+        local_rules = out_dir / "local_rules.xml"
+        agent_snippet = out_dir / "agent_ossec_snippet.xml"
+        assert result == out_dir
+        assert local_rules.is_file()
+        assert agent_snippet.is_file()
+        assert local_rules.read_text(encoding="utf-8").strip()
+        assert agent_snippet.read_text(encoding="utf-8").strip()
 
 
 class TestStatsOutput:
