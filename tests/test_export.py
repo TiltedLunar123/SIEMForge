@@ -1,6 +1,7 @@
 """Tests for export and stats functionality."""
 
 import json
+from pathlib import Path
 
 from siemforge import (
     MITRE_MAP,
@@ -157,6 +158,73 @@ class TestExportWazuhRules:
         assert agent_snippet.is_file()
         assert local_rules.read_text(encoding="utf-8").strip()
         assert agent_snippet.read_text(encoding="utf-8").strip()
+
+
+def _raise_oserror(*args, **kwargs):
+    raise OSError("simulated disk failure")
+
+
+class TestExportErrorHandling:
+    """The exporters should report I/O failures and return cleanly, not crash."""
+
+    def test_sigma_export_reports_mkdir_failure(self, tmp_path, monkeypatch, capsys):
+        rules = load_sigma_rules()
+        monkeypatch.setattr(Path, "mkdir", _raise_oserror)
+        result = export_sigma_rules(rules, output_dir=str(tmp_path / "out"), dry_run=False)
+        assert result is None
+        assert "Cannot create directory" in capsys.readouterr().out
+
+    def test_sigma_export_reports_write_failure(self, tmp_path, monkeypatch, capsys):
+        rules = load_sigma_rules()
+        monkeypatch.setattr(Path, "write_text", _raise_oserror)
+        out = tmp_path / "out"
+        result = export_sigma_rules(rules, output_dir=str(out), dry_run=False)
+        # The directory is created, so a path comes back, but each write is
+        # reported as a failure rather than raising.
+        assert result == out
+        assert "Failed to write" in capsys.readouterr().out
+
+    def test_sysmon_export_reports_mkdir_failure(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setattr(Path, "mkdir", _raise_oserror)
+        result = export_sysmon_config(output_dir=str(tmp_path / "out"), dry_run=False)
+        assert result is None
+        assert "Cannot create directory" in capsys.readouterr().out
+
+    def test_sysmon_export_reports_write_failure(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setattr(Path, "write_text", _raise_oserror)
+        result = export_sysmon_config(output_dir=str(tmp_path / "out"), dry_run=False)
+        assert result is None
+        assert "Failed to write" in capsys.readouterr().out
+
+    def test_wazuh_export_reports_mkdir_failure(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setattr(Path, "mkdir", _raise_oserror)
+        result = export_wazuh_rules(output_dir=str(tmp_path / "out"), dry_run=False)
+        assert result is None
+        assert "Cannot create directory" in capsys.readouterr().out
+
+    def test_wazuh_export_reports_write_failure(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setattr(Path, "write_text", _raise_oserror)
+        out = tmp_path / "out"
+        result = export_wazuh_rules(output_dir=str(out), dry_run=False)
+        # Both files fail to write but the directory path still comes back.
+        assert result == out
+        assert capsys.readouterr().out.count("Failed to write") == 2
+
+    def test_export_all_reports_base_mkdir_failure(self, tmp_path, monkeypatch, capsys):
+        rules = load_sigma_rules()
+        monkeypatch.setattr(Path, "mkdir", _raise_oserror)
+        export_all(rules, output_dir=str(tmp_path / "out"), dry_run=False)
+        assert "Cannot create export directory" in capsys.readouterr().out
+
+    def test_export_all_reports_write_failures(self, tmp_path, monkeypatch, capsys):
+        # Directories are created for real; only the writes fail, so every
+        # section (sigma, sysmon, wazuh, manifest) logs its own failure.
+        rules = load_sigma_rules()
+        monkeypatch.setattr(Path, "write_text", _raise_oserror)
+        export_all(rules, output_dir=str(tmp_path / "out"), dry_run=False)
+        out = capsys.readouterr().out
+        assert "Failed to write" in out
+        assert "manifest.json" in out
 
 
 class TestStatsOutput:
