@@ -1,6 +1,7 @@
 """Tests for the log scanner."""
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 
@@ -10,7 +11,9 @@ from siemforge.loader import load_sigma_rules
 from siemforge.scanner import (
     MAX_LOG_FILE_BYTES,
     LogFileTooLargeError,
+    _check_log_size,
     _eval_condition,
+    _eval_quantifier,
     _flatten,
     _match_selection,
     _match_value,
@@ -231,6 +234,49 @@ class TestParseLogFileEdgeCases:
         assert events == []
 
 
+class TestParserFallbacks:
+    """Format auto-detection and the defensive fallbacks around parsing."""
+
+    def test_autodetect_csv_by_suffix(self, tmp_path):
+        f = tmp_path / "traffic.csv"
+        f.write_text("name,value\nalpha,1\nbeta,2\n", encoding="utf-8")
+        events = parse_log_file(f)  # no explicit fmt -> resolved from .csv
+        assert len(events) == 2
+        assert events[0]["name"] == "alpha"
+
+    def test_autodetect_unknown_suffix_defaults_to_json(self, tmp_path):
+        f = tmp_path / "events.dat"
+        f.write_text('[{"a": 1}, {"b": 2}]', encoding="utf-8")
+        events = parse_log_file(f)  # unknown suffix -> json parser
+        assert events == [{"a": 1}, {"b": 2}]
+
+    def test_csv_sniffer_error_falls_back_to_positional(self, tmp_path, monkeypatch):
+        # When the sniffer can't decide on a header, the parser treats every
+        # row as data with positional col_N keys instead of blowing up.
+        def boom(self, sample):
+            raise csv.Error("could not determine delimiter")
+
+        monkeypatch.setattr(csv.Sniffer, "has_header", boom)
+        f = tmp_path / "ambiguous.csv"
+        f.write_text("a,b\n1,2\n", encoding="utf-8")
+        events = parse_log_file(f, fmt="csv")
+        assert events[0] == {"col_0": "a", "col_1": "b"}
+        assert events[1] == {"col_0": "1", "col_1": "2"}
+
+    def test_check_log_size_ignores_stat_error(self, tmp_path, monkeypatch):
+        # If stat() can't be read, the size guard steps aside rather than
+        # refusing to scan a file it can't measure.
+        f = tmp_path / "x.json"
+        f.write_text("[]", encoding="utf-8")
+
+        def boom(self, *a, **k):
+            raise OSError("stat blocked")
+
+        monkeypatch.setattr(Path, "stat", boom)
+        # Should return without raising.
+        assert _check_log_size(f) is None
+
+
 class TestMatchValueEdgeCases:
 
     def test_regex_modifier(self):
@@ -250,6 +296,31 @@ class TestMatchSelectionEdgeCases:
             {"a": "1"},
             {"nonexistent_field": "value"},
         )
+
+    def test_keyword_searches_every_field_value(self):
+        # A bare "_keyword" selection scans all event values, defaulting to a
+        # "contains" match, which is how Sigma keyword lists behave.
+        event = {"commandline": "c:\\tools\\mimikatz.exe sekurlsa::logonpasswords"}
+        assert _match_selection(event, {"_keyword": "mimikatz"})
+        assert not _match_selection(event, {"_keyword": "cobaltstrike"})
+
+    def test_keyword_accepts_a_list_of_terms(self):
+        event = {"message": "sudo: pam_unix authentication failure"}
+        # Any one term matching is enough.
+        assert _match_selection(event, {"_keyword": ["nothing-here", "pam_unix"]})
+        assert not _match_selection(event, {"_keyword": ["nope", "still-nope"]})
+
+    def test_keyword_honors_modifiers(self):
+        event = {"image": "c:\\windows\\system32\\cmd.exe"}
+        assert _match_selection(event, {"_keyword|endswith": ".exe"})
+        assert not _match_selection(event, {"_keyword|endswith": ".dll"})
+
+    def test_field_resolves_through_nested_flattened_key(self):
+        # The scanner flattens nested events to dotted keys. A selection that
+        # names just the leaf field should still resolve against the dotted key.
+        event = {"winlog.event_data.commandline": "powershell.exe -enc ZQBjAGgAbwA="}
+        assert _match_selection(event, {"commandline|contains": "-enc"})
+        assert not _match_selection(event, {"commandline|contains": "-noprofile"})
 
 
 class TestQuantifierConditions:
@@ -314,6 +385,52 @@ class TestQuantifierConditions:
                            "CommandLine": "cmd.exe -enc whatever"}, rule)
         assert not match_rule({"Image": "C:\\Windows\\notepad.exe",
                                "CommandLine": "notepad.exe file.txt"}, rule)
+
+
+class TestMatchRuleGuards:
+    """Guard clauses that keep match_rule from crashing on malformed rules."""
+
+    def test_non_dict_detection_returns_false(self):
+        assert not match_rule({"a": "b"}, {"detection": "not a mapping"})
+
+    def test_missing_condition_returns_false(self):
+        rule = {"detection": {"selection": {"a|contains": "b"}}}
+        assert not match_rule({"a": "b"}, rule)
+
+    def test_list_selection_block_matches_any_alternative(self):
+        rule = {
+            "detection": {
+                "selection": [
+                    {"Image|endswith": "\\a.exe"},
+                    {"Image|endswith": "\\b.exe"},
+                ],
+                "condition": "selection",
+            }
+        }
+        assert match_rule({"Image": "c:\\tools\\b.exe"}, rule)
+        assert not match_rule({"Image": "c:\\tools\\c.exe"}, rule)
+
+    def test_scalar_selection_block_never_matches(self):
+        # A selection whose value is a bare scalar can't match anything, so the
+        # rule that leans on it stays quiet instead of erroring.
+        rule = {"detection": {"weird": "just-a-string", "condition": "weird"}}
+        assert not match_rule({"anything": "here"}, rule)
+
+
+class TestConditionEdgeCases:
+    """Direct exercises of the condition parser and quantifier helper."""
+
+    def test_empty_condition_is_false(self):
+        assert not _eval_condition("", {"selection": True})
+
+    def test_condition_with_no_real_tokens_is_false(self):
+        # Punctuation the tokenizer ignores collapses to no tokens.
+        assert not _eval_condition("!!!", {"selection": True})
+
+    def test_quantifier_rejects_non_numeric_count(self):
+        # parse_atom only routes "all"/digits here, but the helper itself must
+        # still fail closed on a bad count rather than raise.
+        assert not _eval_quantifier("2x", "them", {"a": True, "b": True})
 
 
 class TestSampleDataCoverage:
