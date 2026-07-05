@@ -99,3 +99,17 @@ class TestLoadConfigFile:
         assert load_config_file("sample.xml", configs_dir=custom) == "<root/>"
         with pytest.raises(ConfigFileError):
             load_config_file("missing.xml", configs_dir=custom)
+
+    def test_unreadable_file_raises_config_error(self, monkeypatch):
+        """A non-missing read failure (e.g. permissions) still becomes ConfigFileError."""
+        from pathlib import Path
+
+        from siemforge.loader import ConfigFileError
+
+        def boom(self, *args, **kwargs):
+            raise PermissionError("access denied")
+
+        monkeypatch.setattr(Path, "read_text", boom)
+        with pytest.raises(ConfigFileError) as exc_info:
+            load_config_file("sysmon_config.xml")
+        assert "Cannot read config file" in str(exc_info.value)

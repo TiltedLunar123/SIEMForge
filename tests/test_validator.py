@@ -2,6 +2,17 @@
 
 
 from siemforge import VALID_LEVELS, load_sigma_rules, validate_sigma_rule
+from siemforge.validator import validate_rules
+
+# A structurally valid rule with no MITRE tag and no falsepositives, so it
+# passes validation but still trips both warnings.
+_VALID_RULE = {
+    "title": "Test", "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    "status": "experimental", "description": "test", "author": "test",
+    "date": "2025/01/01", "logsource": {"category": "test"},
+    "detection": {"selection": {"field": "value"}, "condition": "selection"},
+    "level": "low",
+}
 
 
 class TestValidateSigmaRule:
@@ -147,6 +158,29 @@ class TestValidateSigmaRule:
         }
         _, warnings = validate_sigma_rule("test.yml", rule)
         assert any("falsepositives" in w for w in warnings)
+
+
+class TestValidateRulesDriver:
+    """The validate_rules driver that loads, tallies, and prints results."""
+
+    def test_defaults_to_loading_shipped_rules(self, capsys):
+        passed, failed, warnings = validate_rules()
+        assert failed == 0
+        assert passed > 0
+        assert "VALIDATING" in capsys.readouterr().out
+
+    def test_reports_a_failing_rule(self, capsys):
+        passed, failed, warnings = validate_rules({"broken.yml": {"title": "Missing everything"}})
+        assert passed == 0
+        assert failed == 1
+        assert "broken.yml" in capsys.readouterr().out
+
+    def test_counts_warnings_on_a_passing_rule(self, capsys):
+        passed, failed, warnings = validate_rules({"warn.yml": dict(_VALID_RULE)})
+        assert passed == 1
+        assert failed == 0
+        # No MITRE tag and no falsepositives -> two warnings.
+        assert warnings >= 1
 
 
 class TestAllRulesValid:
