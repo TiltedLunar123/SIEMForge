@@ -251,6 +251,31 @@ class TestMatchSelectionEdgeCases:
             {"nonexistent_field": "value"},
         )
 
+    def test_keyword_searches_every_field_value(self):
+        # A bare "_keyword" selection scans all event values, defaulting to a
+        # "contains" match, which is how Sigma keyword lists behave.
+        event = {"commandline": "c:\\tools\\mimikatz.exe sekurlsa::logonpasswords"}
+        assert _match_selection(event, {"_keyword": "mimikatz"})
+        assert not _match_selection(event, {"_keyword": "cobaltstrike"})
+
+    def test_keyword_accepts_a_list_of_terms(self):
+        event = {"message": "sudo: pam_unix authentication failure"}
+        # Any one term matching is enough.
+        assert _match_selection(event, {"_keyword": ["nothing-here", "pam_unix"]})
+        assert not _match_selection(event, {"_keyword": ["nope", "still-nope"]})
+
+    def test_keyword_honors_modifiers(self):
+        event = {"image": "c:\\windows\\system32\\cmd.exe"}
+        assert _match_selection(event, {"_keyword|endswith": ".exe"})
+        assert not _match_selection(event, {"_keyword|endswith": ".dll"})
+
+    def test_field_resolves_through_nested_flattened_key(self):
+        # The scanner flattens nested events to dotted keys. A selection that
+        # names just the leaf field should still resolve against the dotted key.
+        event = {"winlog.event_data.commandline": "powershell.exe -enc ZQBjAGgAbwA="}
+        assert _match_selection(event, {"commandline|contains": "-enc"})
+        assert not _match_selection(event, {"commandline|contains": "-noprofile"})
+
 
 class TestQuantifierConditions:
     """Sigma '1 of'/'all of' quantifier syntax in the condition parser."""
