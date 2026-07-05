@@ -11,6 +11,7 @@ from siemforge.scanner import (
     MAX_LOG_FILE_BYTES,
     LogFileTooLargeError,
     _eval_condition,
+    _eval_quantifier,
     _flatten,
     _match_selection,
     _match_value,
@@ -339,6 +340,52 @@ class TestQuantifierConditions:
                            "CommandLine": "cmd.exe -enc whatever"}, rule)
         assert not match_rule({"Image": "C:\\Windows\\notepad.exe",
                                "CommandLine": "notepad.exe file.txt"}, rule)
+
+
+class TestMatchRuleGuards:
+    """Guard clauses that keep match_rule from crashing on malformed rules."""
+
+    def test_non_dict_detection_returns_false(self):
+        assert not match_rule({"a": "b"}, {"detection": "not a mapping"})
+
+    def test_missing_condition_returns_false(self):
+        rule = {"detection": {"selection": {"a|contains": "b"}}}
+        assert not match_rule({"a": "b"}, rule)
+
+    def test_list_selection_block_matches_any_alternative(self):
+        rule = {
+            "detection": {
+                "selection": [
+                    {"Image|endswith": "\\a.exe"},
+                    {"Image|endswith": "\\b.exe"},
+                ],
+                "condition": "selection",
+            }
+        }
+        assert match_rule({"Image": "c:\\tools\\b.exe"}, rule)
+        assert not match_rule({"Image": "c:\\tools\\c.exe"}, rule)
+
+    def test_scalar_selection_block_never_matches(self):
+        # A selection whose value is a bare scalar can't match anything, so the
+        # rule that leans on it stays quiet instead of erroring.
+        rule = {"detection": {"weird": "just-a-string", "condition": "weird"}}
+        assert not match_rule({"anything": "here"}, rule)
+
+
+class TestConditionEdgeCases:
+    """Direct exercises of the condition parser and quantifier helper."""
+
+    def test_empty_condition_is_false(self):
+        assert not _eval_condition("", {"selection": True})
+
+    def test_condition_with_no_real_tokens_is_false(self):
+        # Punctuation the tokenizer ignores collapses to no tokens.
+        assert not _eval_condition("!!!", {"selection": True})
+
+    def test_quantifier_rejects_non_numeric_count(self):
+        # parse_atom only routes "all"/digits here, but the helper itself must
+        # still fail closed on a bad count rather than raise.
+        assert not _eval_quantifier("2x", "them", {"a": True, "b": True})
 
 
 class TestSampleDataCoverage:
