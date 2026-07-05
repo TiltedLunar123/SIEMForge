@@ -1,6 +1,7 @@
 """Tests for the log scanner."""
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from siemforge.loader import load_sigma_rules
 from siemforge.scanner import (
     MAX_LOG_FILE_BYTES,
     LogFileTooLargeError,
+    _check_log_size,
     _eval_condition,
     _eval_quantifier,
     _flatten,
@@ -230,6 +232,49 @@ class TestParseLogFileEdgeCases:
         f.write_text("\n\n\n", encoding="utf-8")
         events = parse_log_file(f, fmt="syslog")
         assert events == []
+
+
+class TestParserFallbacks:
+    """Format auto-detection and the defensive fallbacks around parsing."""
+
+    def test_autodetect_csv_by_suffix(self, tmp_path):
+        f = tmp_path / "traffic.csv"
+        f.write_text("name,value\nalpha,1\nbeta,2\n", encoding="utf-8")
+        events = parse_log_file(f)  # no explicit fmt -> resolved from .csv
+        assert len(events) == 2
+        assert events[0]["name"] == "alpha"
+
+    def test_autodetect_unknown_suffix_defaults_to_json(self, tmp_path):
+        f = tmp_path / "events.dat"
+        f.write_text('[{"a": 1}, {"b": 2}]', encoding="utf-8")
+        events = parse_log_file(f)  # unknown suffix -> json parser
+        assert events == [{"a": 1}, {"b": 2}]
+
+    def test_csv_sniffer_error_falls_back_to_positional(self, tmp_path, monkeypatch):
+        # When the sniffer can't decide on a header, the parser treats every
+        # row as data with positional col_N keys instead of blowing up.
+        def boom(self, sample):
+            raise csv.Error("could not determine delimiter")
+
+        monkeypatch.setattr(csv.Sniffer, "has_header", boom)
+        f = tmp_path / "ambiguous.csv"
+        f.write_text("a,b\n1,2\n", encoding="utf-8")
+        events = parse_log_file(f, fmt="csv")
+        assert events[0] == {"col_0": "a", "col_1": "b"}
+        assert events[1] == {"col_0": "1", "col_1": "2"}
+
+    def test_check_log_size_ignores_stat_error(self, tmp_path, monkeypatch):
+        # If stat() can't be read, the size guard steps aside rather than
+        # refusing to scan a file it can't measure.
+        f = tmp_path / "x.json"
+        f.write_text("[]", encoding="utf-8")
+
+        def boom(self, *a, **k):
+            raise OSError("stat blocked")
+
+        monkeypatch.setattr(Path, "stat", boom)
+        # Should return without raising.
+        assert _check_log_size(f) is None
 
 
 class TestMatchValueEdgeCases:
