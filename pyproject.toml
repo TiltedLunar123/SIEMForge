@@ -9,7 +9,7 @@ description = "Portable SIEM detection toolkit with Sigma rules, Sysmon config, 
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
-authors = [{name = "Jude Hilgendorf", email = "hilgendorfjude@gmail.com"}]
+authors = [{name = "Jude Hilgendorf", email = "tiltedlunar010@gmail.com"}]
 keywords = ["siem", "sigma", "detection", "sysmon", "wazuh", "mitre-attack", "security", "threat-detection"]
 dependencies = ["pyyaml>=6.0,<7.0"]
 classifiers = [
