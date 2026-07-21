@@ -135,6 +135,34 @@ class TestParseCondition:
         with pytest.raises(ValueError, match="[Ee]mpty"):
             parse_condition("   \n  ")
 
+    def test_unbalanced_open_paren_raises(self):
+        with pytest.raises(ValueError, match="closing parenthesis"):
+            parse_condition("(selection_a or selection_b")
+
+    def test_missing_close_paren_before_end_raises(self):
+        with pytest.raises(ValueError, match="closing parenthesis"):
+            parse_condition("(selection_a and selection_b")
+
+    def test_dangling_and_raises(self):
+        with pytest.raises(ValueError, match="Unexpected end of condition"):
+            parse_condition("selection and")
+
+    def test_dangling_or_raises(self):
+        with pytest.raises(ValueError, match="Unexpected end of condition"):
+            parse_condition("selection or")
+
+    def test_bare_not_raises(self):
+        with pytest.raises(ValueError, match="Unexpected end of condition"):
+            parse_condition("not")
+
+    def test_trailing_identifier_raises(self):
+        with pytest.raises(ValueError, match="Unexpected token 'extra'"):
+            parse_condition("selection extra")
+
+    def test_unmatched_close_paren_raises(self):
+        with pytest.raises(ValueError, match="Unexpected token"):
+            parse_condition("selection)")
+
 
 # ── Field Parsing Tests ────────────────────────
 
