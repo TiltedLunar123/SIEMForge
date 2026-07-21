@@ -190,6 +190,39 @@ class TestBaseConverterFieldParsing:
         assert mods == ["startswith"]
 
 
+# ── Rendering Edge Cases ───────────────────────
+
+
+class TestRenderingEdgeCases:
+
+    def setup_method(self):
+        self.conv = SplunkConverter()
+
+    def test_startswith_wildcard_appends_trailing_star(self):
+        # apply_wildcard has tests for contains and endswith through
+        # convert_field_match; startswith was the one branch with none.
+        result = self.conv.convert_field_match("Image", ["startswith"], ["powershell"])
+        assert result == 'Image="powershell*"'
+
+    def test_unknown_selection_renders_placeholder_comment(self):
+        # A condition may reference a selection the detection block never
+        # defines. The converter emits a comment rather than crashing.
+        rule = {
+            "detection": {
+                "selection": {"Image": "cmd.exe"},
+                "condition": "missing_selection",
+            }
+        }
+        result = self.conv.convert_rule(rule)
+        assert result == "/* unknown selection: missing_selection */"
+
+    def test_unknown_ast_node_raises(self):
+        # Guard against an AST walker that silently ignores a node type it
+        # does not recognize.
+        with pytest.raises(ValueError, match="Unknown AST node"):
+            self.conv._render_ast(object(), {})
+
+
 # ── Splunk Tests ───────────────────────────────
 
 
