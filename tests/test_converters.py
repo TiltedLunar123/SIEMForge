@@ -350,6 +350,20 @@ class TestListOfDictDetection:
         result = conv.convert_rule(rule)
         assert result == '(CommandLine="*-enc*" OR CommandLine="*-w hidden*")'
 
+    def test_single_map_list_collapses_across_backends(self):
+        # A list with one map is still an OR group, but with a single clause
+        # the OR join collapses to that clause. This branch was untested in
+        # every backend.
+        rule = {
+            "detection": {
+                "selection": [{"Image": "cmd.exe"}],
+                "condition": "selection",
+            }
+        }
+        assert SplunkConverter().convert_rule(rule) == 'Image="cmd.exe"'
+        assert ElasticConverter().convert_rule(rule) == 'Image:"cmd.exe"'
+        assert KibanaConverter().convert_rule(rule) == 'Image: "cmd.exe"'
+
 
 # ── Value Escaping Tests (issue #5) ────────────
 
@@ -449,6 +463,12 @@ class TestKibanaConverter:
             "Image", ["endswith"], ["\\\\powershell.exe", "\\\\pwsh.exe"]
         )
         assert " or " in result
+
+    def test_keyword_field(self):
+        result = self.conv.convert_field_match(
+            "_keyword", [], ["Failed password"]
+        )
+        assert result == '"Failed password"'
 
     def test_negation(self):
         result = self.conv.negate('User: "SYSTEM"')
