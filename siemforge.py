@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SIEMForge CLI — backward-compatible entry point.
+"""SIEMForge CLI, backward-compatible entry point.
 
 Delegates to the siemforge package. Prefer: python -m siemforge
 """

@@ -1,28 +1,18 @@
-# SIEMForge -- SIEM Detection Content Toolkit
+# SIEMForge
 
-**Author:** Jude Hilgendorf | [github.com/TiltedLunar123](https://github.com/TiltedLunar123)
+Detection content you can carry between SIEMs. Sigma rules, a Sysmon config, and Wazuh
+custom rules, all mapped to MITRE ATT&CK, plus the tooling to validate them, convert
+them to your backend's query language, and scan logs with them offline.
 
 [![CI](https://github.com/TiltedLunar123/SIEMForge/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/TiltedLunar123/SIEMForge/actions/workflows/ci.yml)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
-![Sigma Rules](https://img.shields.io/badge/detection-Sigma%20Rules-brightgreen)
-![Wazuh Custom Rules](https://img.shields.io/badge/detection-Wazuh%20Custom%20Rules-orange)
-![Sysmon Config](https://img.shields.io/badge/config-Sysmon-blueviolet)
-![MITRE ATT&CK Mapped](https://img.shields.io/badge/framework-MITRE%20ATT%26CK%20Mapped-red)
 ![License MIT](https://img.shields.io/badge/license-MIT-green)
 
-> An all-in-one toolkit for building, converting, validating, and deploying SIEM detection content -- Sigma rules, Sysmon configuration, Wazuh custom rules, MITRE ATT&CK mapping, log scanning, exporting, converting, and validation.
+I built this because setting up a home lab meant writing the same detections three
+times, once for the Sigma repo, once for Sysmon, once in Wazuh's XML, and then keeping
+them in sync by hand. Here they are written once and exported.
 
----
-
-## What's New in v3.1
-
-- **Expanded test suite** -- 138 tests covering CLI, scanner edge cases, stats output, and new sample data.
-- **Better error handling** -- converter and scanner errors are caught and reported gracefully with proper exit codes.
-- **More sample data** -- process injection, service installation, user creation, CSV, and a clean baseline for false positive validation.
-- **CI improvements** -- Windows matrix testing, all three converter backends smoke-tested, MITRE and export smoke tests.
-- **Sigma spec fix** -- `ssh_bruteforce_burst.yml` now uses proper field-condition mapping.
-
----
+Changes by version are in [CHANGELOG.md](CHANGELOG.md).
 
 ## Quick Start
 

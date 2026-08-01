@@ -1,4 +1,4 @@
-"""Terminal display helpers — colors, banners, status output."""
+"""Terminal display helpers, colors, banners, status output."""
 from __future__ import annotations
 
 import os

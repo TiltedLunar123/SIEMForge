@@ -3,7 +3,7 @@ id: 0494607a-d2b2-44cd-b747-3958bc88c094
 status: experimental
 description: >
     Detects PowerShell execution with suspicious parameters commonly
-    used by attackers — encoded commands, download cradles, execution
+    used by attackers, encoded commands, download cradles, execution
     policy bypasses, and AMSI bypass attempts.
 references:
     - https://attack.mitre.org/techniques/T1059/001/

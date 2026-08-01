@@ -117,7 +117,7 @@ def export_wazuh_rules(output_dir: str = "wazuh",
 
 def export_all(rules: dict[str, dict], output_dir: str = "siemforge_export",
                dry_run: bool = False) -> None:
-    """Export everything — Sigma rules, Sysmon config, Wazuh rules."""
+    """Export everything, Sigma rules, Sysmon config, Wazuh rules."""
     header("FULL EXPORT \u2014 ALL DETECTION CONTENT")
 
     base = Path(output_dir)

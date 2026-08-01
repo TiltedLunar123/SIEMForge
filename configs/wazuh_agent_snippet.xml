@@ -1,5 +1,5 @@
 <!--
-    SIEMForge — Wazuh Agent Configuration Snippet
+    SIEMForge: Wazuh Agent Configuration Snippet
     Add this to the Wazuh agent's ossec.conf to forward Sysmon logs.
     Location: C:\Program Files (x86)\ossec-agent\ossec.conf (Windows)
 -->
