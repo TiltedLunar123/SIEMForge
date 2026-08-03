@@ -135,6 +135,34 @@ class TestParseCondition:
         with pytest.raises(ValueError, match="[Ee]mpty"):
             parse_condition("   \n  ")
 
+    def test_unbalanced_open_paren_raises(self):
+        with pytest.raises(ValueError, match="closing parenthesis"):
+            parse_condition("(selection_a or selection_b")
+
+    def test_missing_close_paren_before_end_raises(self):
+        with pytest.raises(ValueError, match="closing parenthesis"):
+            parse_condition("(selection_a and selection_b")
+
+    def test_dangling_and_raises(self):
+        with pytest.raises(ValueError, match="Unexpected end of condition"):
+            parse_condition("selection and")
+
+    def test_dangling_or_raises(self):
+        with pytest.raises(ValueError, match="Unexpected end of condition"):
+            parse_condition("selection or")
+
+    def test_bare_not_raises(self):
+        with pytest.raises(ValueError, match="Unexpected end of condition"):
+            parse_condition("not")
+
+    def test_trailing_identifier_raises(self):
+        with pytest.raises(ValueError, match="Unexpected token 'extra'"):
+            parse_condition("selection extra")
+
+    def test_unmatched_close_paren_raises(self):
+        with pytest.raises(ValueError, match="Unexpected token"):
+            parse_condition("selection)")
+
 
 # ── Field Parsing Tests ────────────────────────
 
@@ -160,6 +188,39 @@ class TestBaseConverterFieldParsing:
         field, mods = BaseConverter.parse_field_name("Path|startswith")
         assert field == "Path"
         assert mods == ["startswith"]
+
+
+# ── Rendering Edge Cases ───────────────────────
+
+
+class TestRenderingEdgeCases:
+
+    def setup_method(self):
+        self.conv = SplunkConverter()
+
+    def test_startswith_wildcard_appends_trailing_star(self):
+        # apply_wildcard has tests for contains and endswith through
+        # convert_field_match; startswith was the one branch with none.
+        result = self.conv.convert_field_match("Image", ["startswith"], ["powershell"])
+        assert result == 'Image="powershell*"'
+
+    def test_unknown_selection_renders_placeholder_comment(self):
+        # A condition may reference a selection the detection block never
+        # defines. The converter emits a comment rather than crashing.
+        rule = {
+            "detection": {
+                "selection": {"Image": "cmd.exe"},
+                "condition": "missing_selection",
+            }
+        }
+        result = self.conv.convert_rule(rule)
+        assert result == "/* unknown selection: missing_selection */"
+
+    def test_unknown_ast_node_raises(self):
+        # Guard against an AST walker that silently ignores a node type it
+        # does not recognize.
+        with pytest.raises(ValueError, match="Unknown AST node"):
+            self.conv._render_ast(object(), {})
 
 
 # ── Splunk Tests ───────────────────────────────
@@ -289,6 +350,20 @@ class TestListOfDictDetection:
         result = conv.convert_rule(rule)
         assert result == '(CommandLine="*-enc*" OR CommandLine="*-w hidden*")'
 
+    def test_single_map_list_collapses_across_backends(self):
+        # A list with one map is still an OR group, but with a single clause
+        # the OR join collapses to that clause. This branch was untested in
+        # every backend.
+        rule = {
+            "detection": {
+                "selection": [{"Image": "cmd.exe"}],
+                "condition": "selection",
+            }
+        }
+        assert SplunkConverter().convert_rule(rule) == 'Image="cmd.exe"'
+        assert ElasticConverter().convert_rule(rule) == 'Image:"cmd.exe"'
+        assert KibanaConverter().convert_rule(rule) == 'Image: "cmd.exe"'
+
 
 # ── Value Escaping Tests (issue #5) ────────────
 
@@ -388,6 +463,12 @@ class TestKibanaConverter:
             "Image", ["endswith"], ["\\\\powershell.exe", "\\\\pwsh.exe"]
         )
         assert " or " in result
+
+    def test_keyword_field(self):
+        result = self.conv.convert_field_match(
+            "_keyword", [], ["Failed password"]
+        )
+        assert result == '"Failed password"'
 
     def test_negation(self):
         result = self.conv.negate('User: "SYSTEM"')
