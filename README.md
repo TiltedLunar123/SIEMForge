@@ -59,7 +59,7 @@ The log scanner lets you test Sigma detection logic against raw log files withou
 | JSON   | `.json`              | Single object or top-level array            |
 | JSONL  | `.jsonl`             | One JSON object per line                    |
 | Syslog | `.log`, `.syslog`    | RFC 3164 / RFC 5424 parsed into key-value   |
-| CSV    | `.csv`               | Header row required; fields map to columns  |
+| CSV    | `.csv`               | Header row needed; fields map to columns  |
 
 ### Scanner Examples
 
@@ -266,7 +266,7 @@ sysmon64.exe -accepteula -i configs\sysmon_config.xml
 sysmon64.exe -c configs\sysmon_config.xml
 ```
 
-4. Verify Sysmon is running:
+4. Check Sysmon is running:
 
 ```powershell
 Get-Service Sysmon64
@@ -296,34 +296,9 @@ systemctl restart wazuh-manager
 
 ## Home Lab Setup
 
-The following diagram illustrates a typical home lab deployment using SIEMForge rules across Sysmon and Wazuh.
+A typical home lab deployment, running these rules across Sysmon and Wazuh.
 
-```
-+----------------------------------------------------------+
-|                      HOME LAB NETWORK                     |
-|                       192.168.1.0/24                      |
-+----------------------------------------------------------+
-|                                                          |
-|   +-----------------+       +-----------------------+    |
-|   |  Windows Host   |       |    Wazuh Manager      |    |
-|   |  (Sysmon agent) | ----> |  /var/ossec/          |    |
-|   |  192.168.1.10   |       |  192.168.1.50         |    |
-|   +-----------------+       +-----------+-----------+    |
-|                                         |                |
-|   +-----------------+                   v                |
-|   |  Linux Host     |       +-----------------------+    |
-|   |  (Wazuh agent)  | ----> |   Wazuh Dashboard     |    |
-|   |  192.168.1.20   |       |   https://:443        |    |
-|   +-----------------+       +-----------------------+    |
-|                                         |                |
-|   +-----------------+                   v                |
-|   |  Attacker VM    |       +-----------------------+    |
-|   |  (Kali Linux)   |       |   Analyst Workstation |    |
-|   |  192.168.1.99   |       |   SIEMForge CLI       |    |
-|   +-----------------+       |   192.168.1.5         |    |
-|                             +-----------------------+    |
-+----------------------------------------------------------+
-```
+![A home lab on 192.168.1.0/24. A Windows host running the Sysmon agent at 192.168.1.10 and a Linux host running the Wazuh agent at 192.168.1.20 both ship events to the Wazuh manager at 192.168.1.50. The manager feeds the Wazuh dashboard on port 443 and sends alerts down to an analyst workstation at 192.168.1.5 running the SIEMForge CLI. A Kali attacker VM at 192.168.1.99 generates the attack traffic.](docs/home-lab.png)
 
 ---
 
